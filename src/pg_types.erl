@@ -64,6 +64,8 @@ encode_values(Values, TypeDb) ->
   {lists:reverse(Rows), lists:reverse(Oids)}.
 
 -spec encode_value(term(), type_db()) -> {pg_proto:row_field(), pg:oid()}.
+encode_value(null, _TypeDb) ->
+  {null, 0};
 encode_value(V, TypeDb) when is_boolean(V) ->
   encode_value({boolean, V}, TypeDb);
 encode_value(V, TypeDb) when
@@ -79,6 +81,13 @@ encode_value(V, TypeDb) when is_binary(V) ->
   encode_value({text, V}, TypeDb);
 encode_value(V, TypeDb) when is_float(V) ->
   encode_value({float8, V}, TypeDb);
+encode_value({TypeName, null}, TypeDb) ->
+  case find_type_by_name(TypeName, TypeDb) of
+    {type, #{oid := Oid}} ->
+      {null, Oid};
+    unknown_type ->
+      error({unknown_type, TypeName})
+  end;
 encode_value({TypeName, V}, TypeDb) ->
   case find_type_by_name(TypeName, TypeDb) of
     {type, Type = #{oid := Oid, codec := {Module, Args}}} ->
@@ -97,6 +106,8 @@ decode_values(ValueData, Oids, TypeDb) ->
 
 -spec decode_value(pg_proto:row_field(), TypeRef, type_db()) -> term() when
     TypeRef :: type_name() | pg:oid().
+decode_value(null, _NameOrOid, _TypeDb) ->
+  null;
 decode_value(Data, NameOrOid, TypeDb) ->
   Fun = case NameOrOid of
           Oid when is_integer(Oid) ->

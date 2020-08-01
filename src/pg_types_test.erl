@@ -58,7 +58,8 @@ types_test_() ->
     fun type_timestamptz/1,
     fun type_interval/1,
 
-    fun type_array/1]}.
+    fun type_array/1,
+    fun type_null/1]}.
 
 type_boolean(C) ->
   [?_assertEqual([true, false],
@@ -481,6 +482,13 @@ type_array(C) ->
                  query_row(C, "SELECT $1",
                            [{{array, int4},
                              [[[1], [2]], [[3], [4]], [[5], [6]]]}]))].
+
+type_null(C) ->
+  [?_assertEqual([null, null, [null]],
+                 query_row(C, "SELECT NULL, NULL::int4, ARRAY[NULL]::text[]")),
+   ?_assertEqual([null, null, [null]],
+                 query_row(C, "SELECT $1, $2, $3",
+                           [null, {int4, null}, {{array, text}, [null]}]))].
 
 -spec query_row(pg_client:ref(), unicode:chardata()) -> [term()].
 query_row(Client, Query) ->
