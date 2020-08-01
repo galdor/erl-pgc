@@ -18,15 +18,8 @@
 
 types_test_() ->
   {foreach,
-   fun () ->
-       Options = #{user => "erl-pg-test", database => "erl-pg-test"},
-       Options2 = pg_client:options(Options),
-       {ok, Client} = pg_client:start_link(Options2),
-       Client
-   end,
-   fun (Client) ->
-       pg_client:stop(Client)
-   end,
+   fun pg_test:start_client/0,
+   fun pg_test:stop_client/1,
    [fun type_boolean/1,
     fun type_bytea/1,
     fun type_char/1,

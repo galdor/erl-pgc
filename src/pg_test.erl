@@ -12,20 +12,20 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_client_test).
+-module(pg_test).
 
--include_lib("eunit/include/eunit.hrl").
+-export([start_client/0, start_client/1, stop_client/1]).
 
-client_test_() ->
-  {foreach,
-   fun pg_test:start_client/0,
-   fun pg_test:stop_client/1,
-   [fun column_names_as_atom/1]}.
+-spec start_client() -> pg_client:client().
+start_client() ->
+  Options = #{user => "erl-pg-test", database => "erl-pg-test"},
+  start_client(pg_client:options(Options)).
 
-column_names_as_atom(C) ->
-  [?_assertEqual({ok, [<<"name">>, <<"score">>], [[<<"bob">>, 42]], 1},
-                 pg_client:query(C, "SELECT 'bob' AS name, 42 AS score")),
-   ?_assertEqual({ok, [name, score], [[<<"bob">>, 42]], 1},
-                 pg_client:query(C, "SELECT 'bob' AS name, 42 AS score", [],
-                                 pg:query_options(
-                                   #{column_names_as_atoms => true})))].
+-spec start_client(pg_client:options()) -> pg_client:client().
+start_client(Options) ->
+  {ok, Client} = pg_client:start_link(Options),
+  Client.
+
+-spec stop_client(pg_client:client()) -> ok.
+stop_client(Client) ->
+  pg_client:stop(Client).
