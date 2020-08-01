@@ -17,7 +17,7 @@
 -export([default_query_options/0, query_options/1]).
 
 -export_type([query_options/0, query_result/0, exec_result/0,
-              column_name/0,
+              column_name/0, row/0,
               oid/0, float_value/0,
               point/0, line_segment/0, path/0, box/0, polygon/0, line/0,
               circle/0,
@@ -26,9 +26,12 @@
               interval/0,
               uuid/0]).
 
+-type query_options() :: #{column_names_as_atoms => boolean(),
+                           rows_as_hashes => boolean()}.
+
 -type query_result() :: {ok,
-                         Columns :: [column_name()],
-                         Rows :: [[term()]],
+                         [column_name()],
+                         [row()],
                          NbAffectedRows :: non_neg_integer()}
                       | {error,
                          pg_proto:error_and_notice_fields()}.
@@ -37,9 +40,9 @@
                      | {error,
                         pg_proto:error_and_notice_fields()}.
 
--type query_options() :: #{column_names_as_atoms => boolean()}.
-
 -type column_name() :: binary() | atom().
+
+-type row() :: [term()] | #{column_name() := term()}.
 
 -type oid() :: non_neg_integer().
 
@@ -73,7 +76,8 @@
 
 -spec default_query_options() -> query_options().
 default_query_options() ->
-  #{column_names_as_atoms => false}.
+  #{column_names_as_atoms => false,
+    rows_as_hashes => false}.
 
 -spec query_options(query_options()) -> query_options().
 query_options(Options) ->

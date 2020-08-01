@@ -20,7 +20,8 @@ client_test_() ->
   {foreach,
    fun pg_test:start_client/0,
    fun pg_test:stop_client/1,
-   [fun column_names_as_atom/1]}.
+   [fun column_names_as_atom/1,
+    fun rows_as_hashes/1]}.
 
 column_names_as_atom(C) ->
   [?_assertEqual({ok, [<<"name">>, <<"score">>], [[<<"bob">>, 42]], 1},
@@ -29,3 +30,18 @@ column_names_as_atom(C) ->
                  pg_client:query(C, "SELECT 'bob' AS name, 42 AS score", [],
                                  pg:query_options(
                                    #{column_names_as_atoms => true})))].
+
+rows_as_hashes(C) ->
+  [?_assertEqual({ok, [n], [[1], [2], [3]], 3},
+                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
+                                 pg:query_options(
+                                   #{column_names_as_atoms => true}))),
+   ?_assertEqual({ok, [<<"n">>], [#{<<"n">> => 1}, #{<<"n">> => 2},
+                                  #{<<"n">> => 3}], 3},
+                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
+                                 pg:query_options(#{rows_as_hashes => true}))),
+   ?_assertEqual({ok, [n], [#{n => 1}, #{n => 2}, #{n => 3}], 3},
+                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
+                                 pg:query_options(
+                                   #{column_names_as_atoms => true,
+                                     rows_as_hashes => true})))].

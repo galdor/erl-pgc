@@ -11,6 +11,8 @@ The erl-pg project is an Erlang client for the
 The following query options are available:
 
 - `column_names_as_atoms`: return column names as atoms instead of binaries.
+- `rows_as_hashes`: return rows as hashes associating column name to value
+  instead of lists of values.
 
 # Type and value mapping
 ## Erlang types to PostgreSQL types

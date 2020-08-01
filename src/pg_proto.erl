@@ -495,12 +495,23 @@ query_response_to_query_result(#{columns := ResponseColumns,
                      _ -> 0
                    end,
   ColumnNamesAsAtoms = maps:get(column_names_as_atoms, Options, false),
-  Columns = [column_name(C, ColumnNamesAsAtoms) || C <- ResponseColumns],
+  ColumnNames = [column_name(C, ColumnNamesAsAtoms) || C <- ResponseColumns],
   Oids = [Oid || #{type_oid := Oid} <- ResponseColumns],
   Rows = lists:map(fun (Row) ->
-                       pg_types:decode_values(Row, Oids, TypeDb)
+                       decode_row(Row, Oids, TypeDb, ColumnNames, Options)
                    end, ResponseRows),
-  {ok, Columns, Rows, NbAffectedRows}.
+  {ok, ColumnNames, Rows, NbAffectedRows}.
+
+-spec decode_row(row(), [pg:oid()], pg_types:type_db(), [pg:column_name()],
+                 pg:query_options()) -> pg:row().
+decode_row(Row, Oids, TypeDb, ColumnNames, Options) ->
+  Values = pg_types:decode_values(Row, Oids, TypeDb),
+  case maps:get(rows_as_hashes, Options, false) of
+    true ->
+      maps:from_list(lists:zip(ColumnNames, Values));
+    false ->
+      Values
+  end.
 
 -spec column_name(column(), AsAtom :: boolean()) -> pg:column_name().
 column_name(#{name := Name}, false) ->
