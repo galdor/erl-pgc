@@ -59,8 +59,8 @@ The following query options are available:
 | `timestamptz`   | `pg:timestamp()`                             | `{{2020, 03, 01}, {14, 10, 30, 3500}}`                        |
 | `interval`      | `pg:interval()`                              | `{1, 5, 16200000000}`                                         |
 | `timetz`        | `pg:time_with_timezone()`                    | `{14, 10, 30, 0, 7200}`                                       |
-| `bit`           | `binary()`                                   | `<<1:1,0:1,1:1>>`                                             |
-| `varbit`        | `binary()`                                   | `<<1:1,0:1,1:1>>`                                             |
+| `bit`           | `bitstring()`                                | `<<1:1,0:1,1:1>>`                                             |
+| `varbit`        | `bitstring()`                                | `<<1:1,0:1,1:1>>`                                             |
 | `uuid`          | `pg:uuid()`                                  | `<<3,172,86,36,126,103,79,211,178,40,23,231,189,76,180,179>>` |
 | `jsonb`         | `binary()`                                   | `<<"[1,2,3]">>`                                               |
 
