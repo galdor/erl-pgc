@@ -20,7 +20,7 @@
 
 -export([default_options/0, options/1,
          start_link/0, start_link/1, start_link/2, stop/1,
-         exec/2, exec/3, query/2, query/3]).
+         exec/2, exec/3, exec/4, query/2, query/3, query/4]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
 -export_type([name/0, ref/0, options/0]).
@@ -73,12 +73,18 @@ stop(Ref) ->
 
 -spec exec(ref(), Query :: unicode:chardata()) -> pg:exec_result().
 exec(Ref, Query)  ->
-  exec(Ref, Query, []).
+  exec(Ref, Query, [], #{}).
 
 -spec exec(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:exec_result().
 exec(Ref, Query, Params) ->
-  case gen_server:call(Ref, {extended_query, Query, Params}, infinity) of
+  exec(Ref, Query, Params, #{}).
+
+-spec exec(ref(), Query :: unicode:chardata(), Params :: [term()],
+           pg:query_options()) -> pg:exec_result().
+exec(Ref, Query, Params, Options) ->
+  Msg = {extended_query, Query, Params, Options},
+  case gen_server:call(Ref, Msg, infinity) of
     {ok, _Columns, _Rows, NbAffectedRows} ->
       {ok, NbAffectedRows};
     {error, Reason} ->
@@ -87,12 +93,17 @@ exec(Ref, Query, Params) ->
 
 -spec query(ref(), Query :: unicode:chardata()) -> pg:query_result().
 query(Ref, Query) ->
-  query(Ref, Query, []).
+  query(Ref, Query, [], #{}).
 
 -spec query(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:query_result().
 query(Ref, Query, Params) ->
-  gen_server:call(Ref, {extended_query, Query, Params}, infinity).
+  query(Ref, Query, Params, #{}).
+
+-spec query(ref(), Query :: unicode:chardata(), Params :: [term()],
+            pg:query_options()) -> pg:query_result().
+query(Ref, Query, Params, Options) ->
+  gen_server:call(Ref, {extended_query, Query, Params, Options}, infinity).
 
 init([Options]) ->
   logger:update_process_metadata(#{domain => [pg]}),
@@ -126,8 +137,8 @@ handle_call({simple_query, Query}, _From, State) ->
   Result = send_simple_query(Query, State),
   {reply, Result, State};
 
-handle_call({extended_query, Query, Params}, _From, State) ->
-  Result = send_extended_query(Query, Params, State),
+handle_call({extended_query, Query, Params, Options}, _From, State) ->
+  Result = send_extended_query(Query, Params, Options, State),
   {reply, Result, State};
 
 handle_call(Msg, From, State) ->
@@ -283,9 +294,10 @@ recv_simple_query_response(State, Response) ->
       {error, {unexpected_msg, Msg}}
   end.
 
--spec send_extended_query(Query :: iodata(), Params :: [term()], state()) ->
+-spec send_extended_query(Query :: iodata(), Params :: [term()],
+                          pg:query_options(), state()) ->
         {ok, pg:query_result()} | {error, term()}.
-send_extended_query(Query, Params, State) ->
+send_extended_query(Query, Params, _Options, State) ->
   #{type_db := TypeDb} = State,
   {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, TypeDb),
   send([pg_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),

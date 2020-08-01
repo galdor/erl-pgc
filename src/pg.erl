@@ -14,7 +14,7 @@
 
 -module(pg).
 
--export_type([query_result/0, exec_result/0,
+-export_type([query_options/0, query_result/0, exec_result/0,
               oid/0, float_value/0,
               point/0, line_segment/0, path/0, box/0, polygon/0, line/0,
               circle/0,
@@ -33,6 +33,8 @@
                         NbAffectedRows :: non_neg_integer()}
                      | {error,
                         pg_proto:error_and_notice_fields()}.
+
+-type query_options() :: #{}.
 
 -type oid() :: non_neg_integer().
 
