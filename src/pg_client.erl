@@ -50,6 +50,12 @@ default_options() ->
 options(Options) ->
   maps:merge(default_options(), Options).
 
+-spec validate_options(options()) -> ok.
+validate_options(Options) ->
+  maps:is_key(user, Options) orelse error(missing_user),
+  maps:is_key(database, Options) orelse error(missing_database),
+  ok.
+
 -spec start_link() -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link() ->
@@ -107,6 +113,7 @@ query(Ref, Query, Params, Options) ->
 
 init([Options]) ->
   logger:update_process_metadata(#{domain => [pg]}),
+  validate_options(Options),
   State = #{options => Options,
             type_db => pg_types:default_type_db()},
   Steps = [fun connect/1,
