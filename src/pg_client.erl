@@ -73,12 +73,12 @@ stop(Ref) ->
 
 -spec exec(ref(), Query :: unicode:chardata()) -> pg:exec_result().
 exec(Ref, Query)  ->
-  exec(Ref, Query, [], #{}).
+  exec(Ref, Query, [], pg:default_query_options()).
 
 -spec exec(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:exec_result().
 exec(Ref, Query, Params) ->
-  exec(Ref, Query, Params, #{}).
+  exec(Ref, Query, Params, pg:default_query_options()).
 
 -spec exec(ref(), Query :: unicode:chardata(), Params :: [term()],
            pg:query_options()) -> pg:exec_result().
@@ -93,12 +93,12 @@ exec(Ref, Query, Params, Options) ->
 
 -spec query(ref(), Query :: unicode:chardata()) -> pg:query_result().
 query(Ref, Query) ->
-  query(Ref, Query, [], #{}).
+  query(Ref, Query, [], pg:default_query_options()).
 
 -spec query(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:query_result().
 query(Ref, Query, Params) ->
-  query(Ref, Query, Params, #{}).
+  query(Ref, Query, Params, pg:default_query_options()).
 
 -spec query(ref(), Query :: unicode:chardata(), Params :: [term()],
             pg:query_options()) -> pg:query_result().
@@ -297,7 +297,7 @@ recv_simple_query_response(State, Response) ->
 -spec send_extended_query(Query :: iodata(), Params :: [term()],
                           pg:query_options(), state()) ->
         {ok, pg:query_result()} | {error, term()}.
-send_extended_query(Query, Params, _Options, State) ->
+send_extended_query(Query, Params, Options, State) ->
   #{type_db := TypeDb} = State,
   {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, TypeDb),
   send([pg_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),
@@ -308,7 +308,7 @@ send_extended_query(Query, Params, _Options, State) ->
        State),
   case recv_extended_query_response(State, pg_proto:query_response()) of
     {ok, Response} ->
-      pg_proto:query_response_to_query_result(Response, TypeDb);
+      pg_proto:query_response_to_query_result(Response, TypeDb, Options);
     {error, Reason} ->
       {error, Reason}
   end.

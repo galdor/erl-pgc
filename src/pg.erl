@@ -14,7 +14,10 @@
 
 -module(pg).
 
+-export([default_query_options/0, query_options/1]).
+
 -export_type([query_options/0, query_result/0, exec_result/0,
+              column_name/0,
               oid/0, float_value/0,
               point/0, line_segment/0, path/0, box/0, polygon/0, line/0,
               circle/0,
@@ -24,7 +27,7 @@
               uuid/0]).
 
 -type query_result() :: {ok,
-                         Columns :: [binary()],
+                         Columns :: [column_name()],
                          Rows :: [[term()]],
                          NbAffectedRows :: non_neg_integer()}
                       | {error,
@@ -34,7 +37,9 @@
                      | {error,
                         pg_proto:error_and_notice_fields()}.
 
--type query_options() :: #{}.
+-type query_options() :: #{column_names_as_atoms => boolean()}.
+
+-type column_name() :: binary() | atom().
 
 -type oid() :: non_neg_integer().
 
@@ -65,3 +70,11 @@
                      Microseconds :: integer()}.
 
 -type uuid() :: <<_:128>>.
+
+-spec default_query_options() -> query_options().
+default_query_options() ->
+  #{column_names_as_atoms => false}.
+
+-spec query_options(query_options()) -> query_options().
+query_options(Options) ->
+  maps:merge(default_query_options(), Options).

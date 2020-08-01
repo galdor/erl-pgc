@@ -4,6 +4,14 @@
 The erl-pg project is an Erlang client for the
 [PostgreSQL](https://www.postgresql.org) database.
 
+# Sending queries
+**TODO**
+
+## Query options
+The following query options are available:
+
+- `column_names_as_atoms`: return column names as atoms instead of binaries.
+
 # Type and value mapping
 ## Erlang types to PostgreSQL types
 | Erlang type                                  | PostgreSQL type |

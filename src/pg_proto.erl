@@ -20,7 +20,7 @@
          encode_startup_msg/3, encode_sync_msg/0, encode_terminate_msg/0,
          decode_msg/2,
          query_response/0, add_query_response_row/2,
-         finalize_query_response/1, query_response_to_query_result/2]).
+         finalize_query_response/1, query_response_to_query_result/3]).
 
 -export_type([msg_type/0, msg/0, error_and_notice_fields/0, severity/0,
               query_response/0, transaction_status/0]).
@@ -481,21 +481,29 @@ finalize_query_response(Response = #{rows := Rows}) ->
 finalize_query_response(Response) ->
   Response.
 
--spec query_response_to_query_result(query_response(), pg_types:type_db()) ->
+-spec query_response_to_query_result(query_response(), pg_types:type_db(),
+                                     pg:query_options()) ->
         pg:query_result().
-query_response_to_query_result(#{error := Error}, _TypeDb) ->
+query_response_to_query_result(#{error := Error}, _TypeDb, _Options) ->
   {error, Error};
 query_response_to_query_result(#{columns := ResponseColumns,
                                  rows := ResponseRows,
                                  command_tag := CommandTag},
-                               TypeDb) ->
+                               TypeDb, Options) ->
   NbAffectedRows = case CommandTag of
                      {_, Nb} -> Nb;
                      _ -> 0
                    end,
-  Columns = [Name || #{name := Name} <- ResponseColumns],
+  ColumnNamesAsAtoms = maps:get(column_names_as_atoms, Options, false),
+  Columns = [column_name(C, ColumnNamesAsAtoms) || C <- ResponseColumns],
   Oids = [Oid || #{type_oid := Oid} <- ResponseColumns],
   Rows = lists:map(fun (Row) ->
                        pg_types:decode_values(Row, Oids, TypeDb)
                    end, ResponseRows),
   {ok, Columns, Rows, NbAffectedRows}.
+
+-spec column_name(column(), AsAtom :: boolean()) -> pg:column_name().
+column_name(#{name := Name}, false) ->
+  Name;
+column_name(#{name := Name}, true) ->
+  binary_to_atom(Name).
