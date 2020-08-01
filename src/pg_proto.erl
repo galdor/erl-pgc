@@ -99,7 +99,7 @@
                      | {move, non_neg_integer()}
                      | {fetch, non_neg_integer()}
                      | {copy, non_neg_integer()}
-                     | set.
+                     | binary().
 
 -spec encode_msg(Payload :: iodata()) -> iodata().
 encode_msg(Payload) ->
@@ -434,10 +434,8 @@ decode_command_tag(<<"FETCH ", Data/binary>>) ->
   decode_command_tag_value(fetch, Data);
 decode_command_tag(<<"COPY ", Data/binary>>) ->
   decode_command_tag_value(copy, Data);
-decode_command_tag(<<"SET">>) ->
-  set;
-decode_command_tag(Data) ->
-  error({invalid_data, Data}).
+decode_command_tag(Bin) ->
+  Bin.
 
 -spec decode_command_tag_value(Type :: atom(), Data :: binary()) ->
         command_tag().
