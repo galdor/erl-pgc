@@ -16,6 +16,7 @@
  [{description, "A PostgreSQL client."},
   {vsn, "1.0.0"},
   {registered, []},
+  {mod, {pg_app, []}},
   {applications,
    [kernel,
     stdlib

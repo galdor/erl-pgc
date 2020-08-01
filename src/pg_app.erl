@@ -12,29 +12,14 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_test).
+-module(pg_app).
 
--export([client_options/0, client_options/1,
-         start_client/0, start_client/1, stop_client/1]).
+-behaviour(application).
 
--spec client_options() -> pg_client:options().
-client_options() ->
-  client_options(#{}).
+-export([start/2, stop/1]).
 
--spec client_options(pg_client:options()) -> pg_client:options().
-client_options(Options) ->
-  maps:merge(#{user => "erl-pg-test", database => "erl-pg-test"},
-             Options).
+start(_StartType, _Args) ->
+  pg_sup:start_link().
 
--spec start_client() -> pg_client:client().
-start_client() ->
-  start_client(pg_client:options(client_options())).
-
--spec start_client(pg_client:options()) -> pg_client:client().
-start_client(Options) ->
-  {ok, Client} = pg_client:start_link(Options),
-  Client.
-
--spec stop_client(pg_client:client()) -> ok.
-stop_client(Client) ->
-  pg_client:stop(Client).
+stop(_State) ->
+  ok.
