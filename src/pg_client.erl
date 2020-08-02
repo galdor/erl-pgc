@@ -33,6 +33,7 @@
                      port => inet:port_number(),
                      tcp_options => [gen_tcp:connect_option()],
                      tls => boolean(),
+                     tls_options => [ssl:tls_client_option()],
                      user => unicode:chardata(),
                      password => unicode:chardata(),
                      database => unicode:chardata(),
@@ -49,6 +50,7 @@ default_options() ->
     port => 5432,
     tcp_options => [],
     tls => false,
+    tls_options => [],
     application_name => "erl-pg",
     types => []}.
 
@@ -197,12 +199,12 @@ maybe_tls_connect(#{options := Options} = State) ->
 
 -spec tls_connect(state()) -> {ok, state()} | {error, term()}.
 tls_connect(State) ->
-  #{socket := Socket} = State,
+  #{options := #{tls_options := TLSOptions},
+    socket := Socket} = State,
   send(pg_proto:encode_ssl_request_msg(), State),
   case gen_tcp:recv(Socket, 1) of
     {ok, <<"S">>} ->
       ?LOG_INFO("initializing tls connection"),
-      TLSOptions = [],
       case ssl:connect(Socket, TLSOptions) of
         {ok, SSLSocket} ->
           ?LOG_INFO("tls connection established"),
