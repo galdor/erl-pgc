@@ -14,6 +14,8 @@
 
 -module(pg_codec_oid).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(integer(), pg_types:type(), pg_types:type_set(), list()) ->

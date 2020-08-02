@@ -14,6 +14,8 @@
 
 -module(pg_codec_timestamp).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -define(REF_MICROSECONDS, 63_113_904_000_000_000). % 2000-01-01T00:00:00.0

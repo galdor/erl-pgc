@@ -14,6 +14,8 @@
 
 -module(pg_codec_interval).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(pg:interval(), pg_types:type(), pg_types:type_set(), []) ->

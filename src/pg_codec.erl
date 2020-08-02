@@ -17,9 +17,9 @@
 -callback encode(Value :: term(),
                  Type :: pg_types:type(),
                  Types :: pg_types:type_set(),
-                 Options :: map()) -> iodata().
+                 Options :: list()) -> iodata().
 
 -callback decode(Data :: binary(),
                  Type :: pg_types:type(),
                  Types :: pg_types:type_set(),
-                 Options :: map()) -> term().
+                 Options :: list()) -> term().

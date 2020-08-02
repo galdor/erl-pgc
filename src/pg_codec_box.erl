@@ -14,6 +14,8 @@
 
 -module(pg_codec_box).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(pg:box(), pg_types:type(), pg_types:type_set(), []) -> iodata().

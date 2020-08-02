@@ -14,6 +14,8 @@
 
 -module(pg_codec_lseg).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(pg:line_segment(), pg_types:type(), pg_types:type_set(), []) ->

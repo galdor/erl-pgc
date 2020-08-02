@@ -14,6 +14,8 @@
 
 -module(pg_codec_date).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -define(REF_DAYS, 730_485). % 2000-01-01

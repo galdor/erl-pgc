@@ -14,6 +14,8 @@
 
 -module(pg_codec_line).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(pg:line(), pg_types:type(), pg_types:type_set(), []) -> iodata().

@@ -14,6 +14,8 @@
 
 -module(pg_codec_char).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 
 -spec encode(0..255, pg_types:type(), pg_types:type_set(), []) -> iodata().

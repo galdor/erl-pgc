@@ -14,6 +14,8 @@
 
 -module(pg_codec_array).
 
+-behaviour(pg_codec).
+
 -export([encode/4, decode/4]).
 -export([array_dimension_lengths/1, array_contains_null/1]).
 
