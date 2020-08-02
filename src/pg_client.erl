@@ -31,6 +31,7 @@
 
 -type options() :: #{host => inet:hostname() | inet:ip_address(),
                      port => inet:port_number(),
+                     tls => boolean(),
                      user => unicode:chardata(),
                      password => unicode:chardata(),
                      database => unicode:chardata(),
@@ -38,12 +39,14 @@
                      types => pg_types:type_set()}.
 
 -type state() :: #{options := options(),
-                   socket => inet:socket()}.
+                   socket => inet:socket(),
+                   ssl_socket => ssl:sslsocket()}.
 
 -spec default_options() -> options().
 default_options() ->
   #{host => "localhost",
     port => 5432,
+    tls => false,
     application_name => "erl-pg",
     types => []}.
 
@@ -117,6 +120,7 @@ init([Options]) ->
   validate_options(Options),
   State = #{options => Options},
   Steps = [fun connect/1,
+           fun maybe_tls_connect/1,
            fun begin_startup/1,
            fun authenticate/1,
            fun finish_startup/1],
@@ -178,6 +182,36 @@ connect(State) ->
     {error, Reason} ->
       ?LOG_ERROR("connection failed: ~p", [Reason]),
       {error, Reason}
+  end.
+
+-spec maybe_tls_connect(state()) -> {ok, state()} | {error, term()}.
+maybe_tls_connect(#{options := Options} = State) ->
+  case maps:get(tls, Options, false) of
+    true ->
+      tls_connect(State);
+    false ->
+      {ok, State}
+  end.
+
+-spec tls_connect(state()) -> {ok, state()} | {error, term()}.
+tls_connect(State) ->
+  #{socket := Socket} = State,
+  send(pg_proto:encode_ssl_request_msg(), State),
+  case gen_tcp:recv(Socket, 1) of
+    {ok, <<"S">>} ->
+      ?LOG_INFO("initializing tls connection"),
+      TLSOptions = [],
+      case ssl:connect(Socket, TLSOptions) of
+        {ok, SSLSocket} ->
+          ?LOG_INFO("tls connection established"),
+          {ok, State#{ssl_socket => SSLSocket}};
+        {error, Reason} ->
+          ?LOG_ERROR("tls connection failed: ~p", [Reason]),
+          {error, Reason}
+      end;
+    {ok, <<"N">>} ->
+      ?LOG_ERROR("server does not support tls connections"),
+      {error, missing_tls_support}
   end.
 
 -spec begin_startup(state()) -> {ok, state()} | {error, term()}.
@@ -363,17 +397,28 @@ recv_extended_query_response(State, Response) ->
   end.
 
 -spec send(iodata(), state()) -> ok.
+send(Data, #{ssl_socket := Socket}) ->
+  ok = ssl:send(Socket, Data),
+  ok;
 send(Data, #{socket := Socket}) ->
   ok = gen_tcp:send(Socket, Data),
   ok.
 
+-spec recv(integer(), state()) -> binary().
+recv(Length, #{ssl_socket := Socket}) ->
+  {ok, Data} = ssl:recv(Socket, Length),
+  Data;
+recv(Length, #{socket := Socket}) ->
+  {ok, Data} = gen_tcp:recv(Socket, Length),
+  Data.
+
 -spec recv_msg(state()) -> pg_proto:msg().
-recv_msg(#{socket := Socket}) ->
-  {ok, Header} = gen_tcp:recv(Socket, 5),
+recv_msg(State) ->
+  Header = recv(5, State),
   <<Type:8/integer, Size:32/integer>> = Header,
   Payload = case Size - 4 of
               0 -> <<>>;
-              N -> {ok, Data} = gen_tcp:recv(Socket, N), Data
+              N -> recv(N, State)
             end,
   Msg = pg_proto:decode_msg(Type, Payload),
   ?LOG_DEBUG("received message ~p", [Msg]),

@@ -17,7 +17,8 @@
 -export([encode_msg/1, encode_msg/2,
          encode_bind_msg/3, encode_describe_msg/2, encode_execute_msg/2,
          encode_parse_msg/3, encode_password_msg/1, encode_query_msg/1,
-         encode_startup_msg/3, encode_sync_msg/0, encode_terminate_msg/0,
+         encode_ssl_request_msg/0, encode_startup_msg/3, encode_sync_msg/0,
+         encode_terminate_msg/0,
          decode_msg/2,
          query_response/0, add_query_response_row/2,
          finalize_query_response/1, query_response_to_query_result/3]).
@@ -160,6 +161,10 @@ encode_password_msg(Password) ->
 -spec encode_query_msg(Query :: unicode:chardata()) -> iodata().
 encode_query_msg(Query) ->
   encode_msg($Q, encode_string(Query)).
+
+-spec encode_ssl_request_msg() -> iodata().
+encode_ssl_request_msg() ->
+  encode_msg(<<80877103:32>>).
 
 -spec encode_startup_msg(MajorVersion :: Version,
                          MinorVersion :: Version,
