@@ -16,14 +16,14 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(bitstring(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(bitstring(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(Bin, _, _, []) ->
   NbBits = bit_size(Bin),
   NbBytes = (NbBits + 7) div 8,
   NbPaddingBits = NbBytes * 8 - NbBits,
   <<NbBits:32, Bin:NbBits/binary-unit:1, 0:NbPaddingBits>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> bitstring().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> bitstring().
 decode(<<NbBits:32, Data/binary>>, _, _, []) ->
   NbBytes = (NbBits + 7) div 8,
   byte_size(Data) == NbBytes orelse error({invalid_data, Data}),

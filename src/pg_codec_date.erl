@@ -18,7 +18,7 @@
 
 -define(REF_DAYS, 730_485). % 2000-01-01
 
--spec encode(pg:date(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(pg:date(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(negative_infinity, _, _, []) ->
   <<-2147483648:32/signed-integer>>;
 encode(positive_infinity, _, _, []) ->
@@ -27,7 +27,7 @@ encode(Date, _, _, []) ->
   Days = calendar:date_to_gregorian_days(Date) - ?REF_DAYS,
   <<Days:32/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:date().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:date().
 decode(<<-2147483648:32/signed-integer>>, _, _, []) ->
   negative_infinity;
 decode(<<2147483647:32/signed-integer>>, _, _, []) ->

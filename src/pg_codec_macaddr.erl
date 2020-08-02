@@ -16,7 +16,7 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:mac_address(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec encode(pg:mac_address(), pg_types:type(), pg_types:type_set(), list()) ->
         iodata().
 encode(Data, _, _, [6]) ->
   <<Addr:6/binary>> = Data,
@@ -25,7 +25,7 @@ encode(Data, _, _, [8]) ->
   <<Addr:8/binary>> = Data,
   Addr.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) ->
         pg:mac_address().
 decode(<<Addr:6/binary>>, _, _, [6]) ->
   Addr;

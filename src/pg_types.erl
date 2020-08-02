@@ -14,292 +14,263 @@
 
 -module(pg_types).
 
--export([type_has_array_type/1, type_to_array_type/1, types_to_array_types/1,
-         encode_values/2, encode_value/2,
+-export([encode_values/2, encode_value/2,
          decode_values/3, decode_value/3,
-         empty_type_db/0, add_to_type_db/2, type_db_from_list/1,
-         find_type_by_oid/2, find_type_by_name/2,
-         default_type_db/0]).
+         find_type_by_name/2, find_type_by_oid/2]).
 
--export_type([type/0, type_db/0]).
+-export_type([type/0, type_set/0, type_name/0, codec/0]).
+
+-type type() :: {type_name(), pg:oid(), codec()}.
+-type type_set() :: [type()].
 
 -type type_name() :: atom() | {array, atom()}.
 
--type type() :: #{oid := pg:oid(),
-                  name := type_name(),
-                  array_oid => pg:oid(),
-                  codec => {module(), list()}}.
+-type codec() :: {module(), list()}.
 
--type type_db() :: #{by_oid := #{pg:oid() := type()},
-                     by_name := #{type_name() := type()}}.
-
--spec type_has_array_type(type()) -> boolean().
-type_has_array_type(Type) ->
-  maps:is_key(array_oid, Type).
-
--spec type_to_array_type(type()) -> type().
-type_to_array_type(#{name := Name, array_oid := ArrayOid}) ->
-  #{oid => ArrayOid,
-    name => {array, Name},
-    codec => {pg_codec_array, [Name]}}.
-
--spec types_to_array_types([type()]) -> [type()].
-types_to_array_types(Types) ->
-  lists:filtermap(fun (Type) ->
-                      case type_has_array_type(Type) of
-                        true ->
-                          {true, type_to_array_type(Type)};
-                        false ->
-                          false
-                      end
-                  end, Types).
-
--spec encode_values(list(), type_db()) -> {pg_proto:row(), [pg:oid()]}.
-encode_values(Values, TypeDb) ->
-  {Rows, Oids} = lists:foldl(fun (Value, {EncodedValues, Oids}) ->
-                                 {EncodedValue, Oid} =
-                                   encode_value(Value, TypeDb),
-                                 {[EncodedValue | EncodedValues], [Oid | Oids]}
-                             end, {[], []}, Values),
+-spec encode_values(list(), type_set()) -> {pg_proto:row(), [pg:oid()]}.
+encode_values(Values, Types) ->
+  F = fun (Value, {EncodedValues, Oids}) ->
+          {EncodedValue, Oid} = encode_value(Value, Types),
+          {[EncodedValue | EncodedValues], [Oid | Oids]}
+      end,
+  {Rows, Oids} = lists:foldl(F, {[], []}, Values),
   {lists:reverse(Rows), lists:reverse(Oids)}.
 
--spec encode_value(term(), type_db()) -> {pg_proto:row_field(), pg:oid()}.
-encode_value(null, _TypeDb) ->
+-spec encode_value(term(), type_set()) -> {pg_proto:row_field(), pg:oid()}.
+encode_value(null, _Types) ->
   {null, 0};
-encode_value(V, TypeDb) when is_boolean(V) ->
-  encode_value({boolean, V}, TypeDb);
-encode_value(V, TypeDb) when
+encode_value(V, Types) when is_boolean(V) ->
+  encode_value({boolean, V}, Types);
+encode_value(V, Types) when
     is_integer(V), V >= -32768, V =< 32767 ->
-  encode_value({int2, V}, TypeDb);
-encode_value(V, TypeDb) when
+  encode_value({int2, V}, Types);
+encode_value(V, Types) when
     is_integer(V), V >= -2147483648, V =< 2147483647 ->
-  encode_value({int4, V}, TypeDb);
-encode_value(V, TypeDb) when
+  encode_value({int4, V}, Types);
+encode_value(V, Types) when
     is_integer(V), V >= -9223372036854775808, V =< 9223372036854775807 ->
-  encode_value({int8, V}, TypeDb);
-encode_value(V, TypeDb) when is_binary(V) ->
-  encode_value({text, V}, TypeDb);
-encode_value(V, TypeDb) when is_float(V) ->
-  encode_value({float8, V}, TypeDb);
-encode_value({TypeName, null}, TypeDb) ->
-  case find_type_by_name(TypeName, TypeDb) of
-    {type, #{oid := Oid}} ->
+  encode_value({int8, V}, Types);
+encode_value(V, Types) when is_binary(V) ->
+  encode_value({text, V}, Types);
+encode_value(V, Types) when is_float(V) ->
+  encode_value({float8, V}, Types);
+encode_value({TypeName, null}, Types) ->
+  case find_type_by_name(TypeName, Types) of
+    {_, Oid, _} ->
       {null, Oid};
     unknown_type ->
       error({unknown_type, TypeName})
   end;
-encode_value({TypeName, V}, TypeDb) ->
-  case find_type_by_name(TypeName, TypeDb) of
-    {type, Type = #{oid := Oid, codec := {Module, Args}}} ->
-      {Module:encode(V, Type, TypeDb, Args), Oid};
+encode_value({TypeName, V}, Types) ->
+  case find_type_by_name(TypeName, Types) of
+    {_, Oid, {Module, Args}} = Type ->
+      {Module:encode(V, Type, Types, Args), Oid};
     unknown_type ->
       error({unknown_type, TypeName})
   end;
-encode_value(V, _TypeDb) ->
+encode_value(V, _Types) ->
   error({unencodable_value, V}).
 
--spec decode_values(pg_proto:row(), [pg:oid()], type_db()) -> list().
-decode_values(ValueData, Oids, TypeDb) ->
+-spec decode_values(pg_proto:row(), [pg:oid()], type_set()) -> list().
+decode_values(ValueData, Oids, Types) ->
   lists:zipwith(fun (Data, Oid) ->
-                    decode_value(Data, Oid, TypeDb)
+                    decode_value(Data, Oid, Types)
                 end, ValueData, Oids).
 
--spec decode_value(pg_proto:row_field(), TypeRef, type_db()) -> term() when
+-spec decode_value(pg_proto:row_field(), TypeRef, type_set()) -> term() when
     TypeRef :: type_name() | pg:oid().
-decode_value(null, _NameOrOid, _TypeDb) ->
+decode_value(null, _NameOrOid, _Types) ->
   null;
-decode_value(Data, NameOrOid, TypeDb) ->
+decode_value(Data, NameOrOid, Types) ->
   Fun = case NameOrOid of
           Oid when is_integer(Oid) ->
             fun find_type_by_oid/2;
           _ ->
             fun find_type_by_name/2
         end,
-  case Fun(NameOrOid, TypeDb) of
-    {type, Type = #{codec := {Module, Args}}} ->
-      Module:decode(Data, Type, TypeDb, Args);
+  case Fun(NameOrOid, Types) of
+    {_, _, {Module, Args}} = Type ->
+      Module:decode(Data, Type, Types, Args);
     unknown_type ->
       error({unknown_type, NameOrOid})
   end.
 
--spec empty_type_db() -> type_db().
-empty_type_db() ->
-  #{by_oid => #{}, by_name => #{}}.
-
--spec add_to_type_db(type(), type_db()) -> type_db().
-add_to_type_db(Type = #{oid := Oid, name := Name},
-               #{by_oid := ByOid, by_name := ByName}) ->
-  ByOid2 = maps:put(Oid, Type, ByOid),
-  ByName2 = maps:put(Name, Type, ByName),
-  #{by_oid => ByOid2, by_name => ByName2}.
-
--spec type_db_from_list([type()]) -> type_db().
-type_db_from_list(Types) ->
-  lists:foldl(fun add_to_type_db/2, empty_type_db(), Types).
-
--spec find_type_by_oid(pg:oid(), type_db()) -> {type, type()} | unknown_type.
-find_type_by_oid(Oid, #{by_oid := ByOid}) ->
-  case maps:find(Oid, ByOid) of
-    {ok, Type} ->
-      {type, Type};
-    error ->
-      unknown_type
+-spec find_type_by_name(type_name(), type_set()) -> type() | unknown_type.
+find_type_by_name(Name, Types) ->
+  Pred = fun ({Name2, _, _}) -> Name2 == Name end,
+  case lists:search(Pred, Types) of
+    {value, Type} ->
+      Type;
+    false ->
+      case name_to_oid(Name) of
+        unknown_name ->
+          unknown_type;
+        Oid ->
+          find_type_by_oid(Oid, Types)
+      end
   end.
 
--spec find_type_by_name(type_name(), type_db()) -> {type, type()} | unknown_type.
-find_type_by_name(Name, #{by_name := ByName}) ->
-  case maps:find(Name, ByName) of
-    {ok, Type} ->
-      {type, Type};
-    error ->
-      unknown_type
+-spec find_type_by_oid(pg:oid(), type_set()) -> type() | unknown_type.
+find_type_by_oid(Oid, Types) ->
+  Pred = fun ({Oid2, _, _}) -> Oid2 == Oid end,
+  case lists:search(Pred, Types) of
+    {value, Type} ->
+      Type;
+    false ->
+      case oid_to_type(Oid) of
+        unknown_oid ->
+          unknown_type;
+        {Name, Codec} ->
+          {Name, Oid, Codec}
+      end
   end.
 
--spec default_type_db() -> type_db().
-default_type_db() ->
-  Types = [#{oid => 16,
-             name => boolean,
-             array_oid => 1000,
-             codec => {pg_codec_boolean, []}},
-           #{oid => 17,
-             name => bytea,
-             array_oid => 1001,
-             codec => {pg_codec_bytea, []}},
-           #{oid => 18,
-             name => char,
-             array_oid => 1002,
-             codec => {pg_codec_char, []}},
-           #{oid => 19,
-             name => name,
-             array_oid => 1003,
-             codec => {pg_codec_name, []}},
-           #{oid => 20,
-             name => int8,
-             array_oid => 1016,
-             codec => {pg_codec_integer, [8]}},
-           #{oid => 21,
-             name => int2,
-             array_oid => 1005,
-             codec => {pg_codec_integer, [2]}},
-           #{oid => 23,
-             name => int4,
-             array_oid => 1007,
-             codec => {pg_codec_integer, [4]}},
-           #{oid => 25,
-             name => text,
-             array_oid => 1009,
-             codec => {pg_codec_text, []}},
-           #{oid => 26,
-             name => oid,
-             array_oid => 1028,
-             codec => {pg_codec_oid, []}},
-           #{oid => 114,
-             name => json,
-             array_oid => 199,
-             codec => {pg_codec_bytea, []}},
-           #{oid => 142,
-             name => xml,
-             array_oid => 143,
-             codec => {pg_codec_bytea, []}},
-           #{oid => 600,
-             name => point,
-             array_oid => 1017,
-             codec => {pg_codec_point, []}},
-           #{oid => 601,
-             name => lseg,
-             array_oid => 1018,
-             codec => {pg_codec_lseg, []}},
-           #{oid => 602,
-             name => path,
-             array_oid => 1019,
-             codec => {pg_codec_path, []}},
-           #{oid => 603,
-             name => box,
-             array_oid => 1020,
-             codec => {pg_codec_box, []}},
-           #{oid => 604,
-             name => polygon,
-             array_oid => 1027,
-             codec => {pg_codec_polygon, []}},
-           #{oid => 628,
-             name => line,
-             array_oid => 629,
-             codec => {pg_codec_line, []}},
-           #{oid => 650,
-             name => cidr,
-             array_oid => 651,
-             codec => {pg_codec_inet, []}},
-           #{oid => 700,
-             name => float4,
-             array_oid => 1021,
-             codec => {pg_codec_float, [4]}},
-           #{oid => 701,
-             name => float8,
-             array_oid => 1022,
-             codec => {pg_codec_float, [8]}},
-           #{oid => 718,
-             name => circle,
-             array_oid => 719,
-             codec => {pg_codec_circle, []}},
-           #{oid => 774,
-             name => macaddr8,
-             array_oid => 775,
-             codec => {pg_codec_macaddr, [8]}},
-           #{oid => 829,
-             name => macaddr,
-             array_oid => 1040,
-             codec => {pg_codec_macaddr, [6]}},
-           #{oid => 869,
-             name => inet,
-             array_oid => 1041,
-             codec => {pg_codec_inet, []}},
-           #{oid => 1042,
-             name => bpchar,
-             array_oid => 1014,
-             codec => {pg_codec_text, []}},
-           #{oid => 1043,
-             name => varchar,
-             array_oid => 1015,
-             codec => {pg_codec_text, []}},
-           #{oid => 1082,
-             name => date,
-             array_oid => 1182,
-             codec => {pg_codec_date, []}},
-           #{oid => 1083,
-             name => time,
-             array_oid => 1183,
-             codec => {pg_codec_time, []}},
-           #{oid => 1114,
-             name => timestamp,
-             array_oid => 1115,
-             codec => {pg_codec_timestamp, []}},
-           #{oid => 1184,
-             name => timestamptz,
-             array_oid => 1185,
-             codec => {pg_codec_timestamp, []}},
-           #{oid => 1186,
-             name => interval,
-             array_oid => 1187,
-             codec => {pg_codec_interval, []}},
-           #{oid => 1266,
-             name => timetz,
-             array_oid => 1270,
-             codec => {pg_codec_timetz, []}},
-           #{oid => 1560,
-             name => bit,
-             array_oid => 1561,
-             codec => {pg_codec_bit, []}},
-           #{oid => 1562,
-             name => varbit,
-             array_oid => 1563,
-             codec => {pg_codec_bit, []}},
-           #{oid => 2950,
-             name => uuid,
-             array_oid => 2951,
-             codec => {pg_codec_uuid, []}},
-           #{oid => 3802,
-             name => jsonb,
-             array_oid => 3807,
-             codec => {pg_codec_jsonb, []}}],
-  Types2 = Types ++ types_to_array_types(Types),
-  type_db_from_list(Types2).
+-spec oid_to_type(pg:oid()) -> {type_name(), codec()} | unknown_oid.
+oid_to_type(16) -> {boolean, {pg_codec_boolean, []}};
+oid_to_type(17) -> {bytea, {pg_codec_bytea, []}};
+oid_to_type(18) -> {char, {pg_codec_char, []}};
+oid_to_type(19) -> {name, {pg_codec_name, []}};
+oid_to_type(20) -> {int8, {pg_codec_integer, [8]}};
+oid_to_type(21) -> {int2, {pg_codec_integer, [2]}};
+oid_to_type(23) -> {int4, {pg_codec_integer, [4]}};
+oid_to_type(25) -> {text, {pg_codec_text, []}};
+oid_to_type(26) -> {oid, {pg_codec_oid, []}};
+oid_to_type(114) -> {json, {pg_codec_bytea, []}};
+oid_to_type(142) -> {xml, {pg_codec_bytea, []}};
+oid_to_type(143) -> {{array, xml}, {pg_codec_array, [xml]}};
+oid_to_type(199) -> {{array, json}, {pg_codec_array, [json]}};
+oid_to_type(600) -> {point, {pg_codec_point, []}};
+oid_to_type(601) -> {lseg, {pg_codec_lseg, []}};
+oid_to_type(602) -> {path, {pg_codec_path, []}};
+oid_to_type(603) -> {box, {pg_codec_box, []}};
+oid_to_type(604) -> {polygon, {pg_codec_polygon, []}};
+oid_to_type(628) -> {line, {pg_codec_line, []}};
+oid_to_type(629) -> {{array, line}, {pg_codec_array, [line]}};
+oid_to_type(650) -> {cidr, {pg_codec_inet, []}};
+oid_to_type(651) -> {{array, cidr}, {pg_codec_array, [cidr]}};
+oid_to_type(700) -> {float4, {pg_codec_float, [4]}};
+oid_to_type(701) -> {float8, {pg_codec_float, [8]}};
+oid_to_type(718) -> {circle, {pg_codec_circle, []}};
+oid_to_type(719) -> {{array, circle}, {pg_codec_array, [circle]}};
+oid_to_type(774) -> {macaddr8, {pg_codec_macaddr, [8]}};
+oid_to_type(775) -> {{array, macaddr8}, {pg_codec_array, [macaddr8]}};
+oid_to_type(829) -> {macaddr, {pg_codec_macaddr, [6]}};
+oid_to_type(869) -> {inet, {pg_codec_inet, []}};
+oid_to_type(1000) -> {{array, boolean}, {pg_codec_array, [boolean]}};
+oid_to_type(1001) -> {{array, bytea}, {pg_codec_array, [bytea]}};
+oid_to_type(1002) -> {{array, char}, {pg_codec_array, [char]}};
+oid_to_type(1003) -> {{array, name}, {pg_codec_array, [name]}};
+oid_to_type(1005) -> {{array, int2}, {pg_codec_array, [int2]}};
+oid_to_type(1007) -> {{array, int4}, {pg_codec_array, [int4]}};
+oid_to_type(1009) -> {{array, text}, {pg_codec_array, [text]}};
+oid_to_type(1014) -> {{array, bpchar}, {pg_codec_array, [bpchar]}};
+oid_to_type(1015) -> {{array, varchar}, {pg_codec_array, [varchar]}};
+oid_to_type(1016) -> {{array, int8}, {pg_codec_array, [int8]}};
+oid_to_type(1017) -> {{array, point}, {pg_codec_array, [point]}};
+oid_to_type(1018) -> {{array, lseg}, {pg_codec_array, [lseg]}};
+oid_to_type(1019) -> {{array, path}, {pg_codec_array, [path]}};
+oid_to_type(1020) -> {{array, box}, {pg_codec_array, [box]}};
+oid_to_type(1021) -> {{array, float4}, {pg_codec_array, [float4]}};
+oid_to_type(1022) -> {{array, float8}, {pg_codec_array, [float8]}};
+oid_to_type(1027) -> {{array, polygon}, {pg_codec_array, [polygon]}};
+oid_to_type(1028) -> {{array, oid}, {pg_codec_array, [oid]}};
+oid_to_type(1040) -> {{array, macaddr}, {pg_codec_array, [macaddr]}};
+oid_to_type(1041) -> {{array, inet}, {pg_codec_array, [inet]}};
+oid_to_type(1042) -> {bpchar, {pg_codec_text, []}};
+oid_to_type(1043) -> {varchar, {pg_codec_text, []}};
+oid_to_type(1082) -> {date, {pg_codec_date, []}};
+oid_to_type(1083) -> {time, {pg_codec_time, []}};
+oid_to_type(1114) -> {timestamp, {pg_codec_timestamp, []}};
+oid_to_type(1115) -> {{array, timestamp}, {pg_codec_array, [timestamp]}};
+oid_to_type(1182) -> {{array, date}, {pg_codec_array, [date]}};
+oid_to_type(1183) -> {{array, time}, {pg_codec_array, [time]}};
+oid_to_type(1184) -> {timestamptz, {pg_codec_timestamp, []}};
+oid_to_type(1185) -> {{array, timestamptz}, {pg_codec_array, [timestamptz]}};
+oid_to_type(1186) -> {interval, {pg_codec_interval, []}};
+oid_to_type(1187) -> {{array, interval}, {pg_codec_array, [interval]}};
+oid_to_type(1266) -> {timetz, {pg_codec_timetz, []}};
+oid_to_type(1270) -> {{array, timetz}, {pg_codec_array, [timetz]}};
+oid_to_type(1560) -> {bit, {pg_codec_bit, []}};
+oid_to_type(1561) -> {{array, bit}, {pg_codec_array, [bit]}};
+oid_to_type(1562) -> {varbit, {pg_codec_bit, []}};
+oid_to_type(1563) -> {{array, varbit}, {pg_codec_array, [varbit]}};
+oid_to_type(2950) -> {uuid, {pg_codec_uuid, []}};
+oid_to_type(2951) -> {{array, uuid}, {pg_codec_array, [uuid]}};
+oid_to_type(3802) -> {jsonb, {pg_codec_jsonb, []}};
+oid_to_type(3807) -> {{array, jsonb}, {pg_codec_array, [jsonb]}};
+oid_to_type(_) -> unknown_oid.
+
+-spec name_to_oid(pg:type_name()) -> pg:oid() | unknown_name.
+name_to_oid(bit) -> 1560;
+name_to_oid(boolean) -> 16;
+name_to_oid(box) -> 603;
+name_to_oid(bpchar) -> 1042;
+name_to_oid(bytea) -> 17;
+name_to_oid(char) -> 18;
+name_to_oid(cidr) -> 650;
+name_to_oid(circle) -> 718;
+name_to_oid(date) -> 1082;
+name_to_oid(float4) -> 700;
+name_to_oid(float8) -> 701;
+name_to_oid(inet) -> 869;
+name_to_oid(int2) -> 21;
+name_to_oid(int4) -> 23;
+name_to_oid(int8) -> 20;
+name_to_oid(interval) -> 1186;
+name_to_oid(json) -> 114;
+name_to_oid(jsonb) -> 3802;
+name_to_oid(line) -> 628;
+name_to_oid(lseg) -> 601;
+name_to_oid(macaddr) -> 829;
+name_to_oid(macaddr8) -> 774;
+name_to_oid(name) -> 19;
+name_to_oid(oid) -> 26;
+name_to_oid(path) -> 602;
+name_to_oid(point) -> 600;
+name_to_oid(polygon) -> 604;
+name_to_oid(text) -> 25;
+name_to_oid(time) -> 1083;
+name_to_oid(timestamp) -> 1114;
+name_to_oid(timestamptz) -> 1184;
+name_to_oid(timetz) -> 1266;
+name_to_oid(uuid) -> 2950;
+name_to_oid(varbit) -> 1562;
+name_to_oid(varchar) -> 1043;
+name_to_oid(xml) -> 142;
+name_to_oid({array, bit}) -> 1561;
+name_to_oid({array, boolean}) -> 1000;
+name_to_oid({array, box}) -> 1020;
+name_to_oid({array, bpchar}) -> 1014;
+name_to_oid({array, bytea}) -> 1001;
+name_to_oid({array, char}) -> 1002;
+name_to_oid({array, cidr}) -> 651;
+name_to_oid({array, circle}) -> 719;
+name_to_oid({array, date}) -> 1182;
+name_to_oid({array, float4}) -> 1021;
+name_to_oid({array, float8}) -> 1022;
+name_to_oid({array, inet}) -> 1041;
+name_to_oid({array, int2}) -> 1005;
+name_to_oid({array, int4}) -> 1007;
+name_to_oid({array, int8}) -> 1016;
+name_to_oid({array, interval}) -> 1187;
+name_to_oid({array, jsonb}) -> 3807;
+name_to_oid({array, json}) -> 199;
+name_to_oid({array, line}) -> 629;
+name_to_oid({array, lseg}) -> 1018;
+name_to_oid({array, macaddr8}) -> 775;
+name_to_oid({array, macaddr}) -> 1040;
+name_to_oid({array, name}) -> 1003;
+name_to_oid({array, oid}) -> 1028;
+name_to_oid({array, path}) -> 1019;
+name_to_oid({array, point}) -> 1017;
+name_to_oid({array, polygon}) -> 1027;
+name_to_oid({array, text}) -> 1009;
+name_to_oid({array, timestamptz}) -> 1185;
+name_to_oid({array, timestamp}) -> 1115;
+name_to_oid({array, timetz}) -> 1270;
+name_to_oid({array, time}) -> 1183;
+name_to_oid({array, uuid}) -> 2951;
+name_to_oid({array, varbit}) -> 1563;
+name_to_oid({array, varchar}) -> 1015;
+name_to_oid({array, xml}) -> 143;
+name_to_oid(_) -> unknown_name.

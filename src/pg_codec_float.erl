@@ -16,7 +16,7 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(float(), pg_types:type(), pg_types:type_db(), list()) -> iodata().
+-spec encode(float(), pg_types:type(), pg_types:type_set(), list()) -> iodata().
 encode(positive_infinity, _, _, [8]) ->
   <<0:1, 2047:11, 0:52>>;
 encode(negative_infinity, _, _, [8]) ->
@@ -34,7 +34,7 @@ encode(nan, _, _, [4]) ->
 encode(F, _, _, [4]) ->
   <<F:32/float>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) ->
         pg:float_value().
 decode(<<0:1, 2047:11, 0:52>>, _, _, [8]) ->
   positive_infinity;

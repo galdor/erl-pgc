@@ -16,7 +16,7 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(integer(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec encode(integer(), pg_types:type(), pg_types:type_set(), list()) ->
         iodata().
 encode(I, _, _, [8]) ->
   <<I:64/signed-integer>>;
@@ -25,7 +25,7 @@ encode(I, _, _, [4]) ->
 encode(I, _, _, [2]) ->
   <<I:16/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) ->
         integer().
 decode(<<I:64/signed-integer>>, _, _, [8]) ->
   I;

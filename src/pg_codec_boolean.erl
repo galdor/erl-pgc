@@ -16,13 +16,13 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(boolean(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(boolean(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(false, _, _, []) ->
   <<0:8>>;
 encode(true, _, _, []) ->
   <<1:8>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> boolean().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> boolean().
 decode(<<0:8>>, _, _, []) ->
   false;
 decode(<<_:8>>, _, _, []) ->

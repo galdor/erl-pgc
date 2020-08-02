@@ -16,8 +16,8 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:path(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode({Type, Points}, _, TypeDb, []) ->
+-spec encode(pg:path(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode({Type, Points}, _, Types, []) ->
   TypeValue = case Type of
                open -> 0;
                closed -> 1
@@ -25,20 +25,20 @@ encode({Type, Points}, _, TypeDb, []) ->
   NbPoints = length(Points),
   PointData = lists:map(fun (Point) ->
                             {Data, _} = pg_types:encode_value({point, Point},
-                                                              TypeDb),
+                                                              Types),
                             Data
                         end, Points),
   [<<TypeValue:8, NbPoints:32>>, PointData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:path().
-decode(<<TypeValue:8, NbPoints:32, Data/binary>>, _, TypeDb, []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:path().
+decode(<<TypeValue:8, NbPoints:32, Data/binary>>, _, Types, []) ->
   Type = case TypeValue of
            0 -> open;
            1 -> closed;
            Value -> error({invalid_path_type, Value})
          end,
   F = fun (_, <<PointData:16/binary, Rest/binary>>) ->
-          Point = pg_types:decode_value(PointData, point, TypeDb),
+          Point = pg_types:decode_value(PointData, point, Types),
           {Point, Rest}
       end,
   {Points, _} = lists:mapfoldl(F, Data, lists:seq(1, NbPoints)),

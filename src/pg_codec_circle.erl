@@ -16,15 +16,15 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:circle(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode({Center, Radius}, _, TypeDb, []) ->
-  {CenterData, _} = pg_types:encode_value({point, Center}, TypeDb),
-  {RadiusData, _} = pg_types:encode_value({float8, Radius}, TypeDb),
+-spec encode(pg:circle(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode({Center, Radius}, _, Types, []) ->
+  {CenterData, _} = pg_types:encode_value({point, Center}, Types),
+  {RadiusData, _} = pg_types:encode_value({float8, Radius}, Types),
   [CenterData, RadiusData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:circle().
-decode(<<CenterData:16/binary, RadiusData:8/binary>>, _, TypeDb, []) ->
-  {pg_types:decode_value(CenterData, point, TypeDb),
-   pg_types:decode_value(RadiusData, float8, TypeDb)};
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:circle().
+decode(<<CenterData:16/binary, RadiusData:8/binary>>, _, Types, []) ->
+  {pg_types:decode_value(CenterData, point, Types),
+   pg_types:decode_value(RadiusData, float8, Types)};
 decode(Data, _, _, []) ->
   error({invalid_data, Data}).

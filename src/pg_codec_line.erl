@@ -16,17 +16,17 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:line(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode({A, B, C}, _, TypeDb, []) ->
-  {AData, _} = pg_types:encode_value({float8, A}, TypeDb),
-  {BData, _} = pg_types:encode_value({float8, B}, TypeDb),
-  {CData, _} = pg_types:encode_value({float8, C}, TypeDb),
+-spec encode(pg:line(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode({A, B, C}, _, Types, []) ->
+  {AData, _} = pg_types:encode_value({float8, A}, Types),
+  {BData, _} = pg_types:encode_value({float8, B}, Types),
+  {CData, _} = pg_types:encode_value({float8, C}, Types),
   [AData, BData, CData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:line().
-decode(<<AData:8/binary, BData:8/binary, CData:8/binary>>, _, TypeDb, []) ->
-  {pg_types:decode_value(AData, float8, TypeDb),
-   pg_types:decode_value(BData, float8, TypeDb),
-   pg_types:decode_value(CData, float8, TypeDb)};
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:line().
+decode(<<AData:8/binary, BData:8/binary, CData:8/binary>>, _, Types, []) ->
+  {pg_types:decode_value(AData, float8, Types),
+   pg_types:decode_value(BData, float8, Types),
+   pg_types:decode_value(CData, float8, Types)};
 decode(Data, _, _, []) ->
   error({invalid_data, Data}).

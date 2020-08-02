@@ -16,10 +16,10 @@
 
 -callback encode(Value :: term(),
                  Type :: pg_types:type(),
-                 TypeDb :: pg_types:type_db(),
+                 Types :: pg_types:type_set(),
                  Options :: map()) -> iodata().
 
 -callback decode(Data :: binary(),
                  Type :: pg_types:type(),
-                 TypeDb :: pg_types:type_db(),
+                 Types :: pg_types:type_set(),
                  Options :: map()) -> term().

@@ -16,10 +16,10 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(binary(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(binary(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(Bin, _, _, []) ->
   Bin.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> binary().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> binary().
 decode(Bin, _, _, []) ->
   Bin.

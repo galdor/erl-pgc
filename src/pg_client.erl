@@ -34,17 +34,18 @@
                      user => unicode:chardata(),
                      password => unicode:chardata(),
                      database => unicode:chardata(),
-                     application_name => unicode:chardata()}.
+                     application_name => unicode:chardata(),
+                     types => pg_types:type_set()}.
 
 -type state() :: #{options := options(),
-                   type_db := pg_types:type_db(),
                    socket => inet:socket()}.
 
 -spec default_options() -> options().
 default_options() ->
   #{host => "localhost",
     port => 5432,
-    application_name => "erl-pg"}.
+    application_name => "erl-pg",
+    types => []}.
 
 -spec options(options()) -> options().
 options(Options) ->
@@ -114,8 +115,7 @@ query(Ref, Query, Params, Options) ->
 init([Options]) ->
   logger:update_process_metadata(#{domain => [pg]}),
   validate_options(Options),
-  State = #{options => Options,
-            type_db => pg_types:default_type_db()},
+  State = #{options => Options},
   Steps = [fun connect/1,
            fun begin_startup/1,
            fun authenticate/1,
@@ -305,8 +305,8 @@ recv_simple_query_response(State, Response) ->
                           pg:query_options(), state()) ->
         {ok, pg:query_result()} | {error, term()}.
 send_extended_query(Query, Params, Options, State) ->
-  #{type_db := TypeDb} = State,
-  {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, TypeDb),
+  #{options := #{types := Types}} = State,
+  {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, Types),
   send([pg_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),
         pg_proto:encode_bind_msg(<<>>, <<>>, EncodedParams),
         pg_proto:encode_describe_msg(portal, <<>>),
@@ -315,7 +315,7 @@ send_extended_query(Query, Params, Options, State) ->
        State),
   case recv_extended_query_response(State, pg_proto:query_response()) of
     {ok, Response} ->
-      pg_proto:query_response_to_query_result(Response, TypeDb, Options);
+      pg_proto:query_response_to_query_result(Response, Types, Options);
     {error, Reason} ->
       {error, Reason}
   end.

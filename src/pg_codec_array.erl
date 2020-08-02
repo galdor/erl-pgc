@@ -17,20 +17,19 @@
 -export([encode/4, decode/4]).
 -export([array_dimension_lengths/1, array_contains_null/1]).
 
--spec encode(list(), pg_types:type(), pg_types:type_db(), list()) -> iodata().
+-spec encode(list(), pg_types:type(), pg_types:type_set(), list()) -> iodata().
 encode(_, _, _, [ValueTypeName = {array, _}]) ->
   error({invalid_value_type, ValueTypeName});
-encode(Array, _, TypeDb, [ValueTypeName]) ->
+encode(Array, _, Types, [ValueTypeName]) ->
   Lengths = array_dimension_lengths(Array),
   NbDimensions = length(Lengths),
   Flags = case array_contains_null(Array) of
             true -> 1;
             false -> 0
           end,
-  {type, #{oid := ValueTypeOid}} =
-    pg_types:find_type_by_name(ValueTypeName, TypeDb),
+  {_, ValueTypeOid, _} = pg_types:find_type_by_name(ValueTypeName, Types),
   Encode = fun (V) ->
-               {Data, _} = pg_types:encode_value({ValueTypeName, V}, TypeDb),
+               {Data, _} = pg_types:encode_value({ValueTypeName, V}, Types),
                Data
            end,
   Header = <<NbDimensions:32, Flags:32, ValueTypeOid:32>>,
@@ -38,13 +37,13 @@ encode(Array, _, TypeDb, [ValueTypeName]) ->
   ContentData = encode_array_content(Array, Encode),
   [Header, DimensionData, ContentData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) -> list().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) -> list().
 decode(<<NbDimensions:32, _Flags:32, _ValueTypeOid:32, Data/binary>>,
-       _, TypeDb, [ValueTypeName]) ->
+       _, Types, [ValueTypeName]) ->
   DimensionDataSize = NbDimensions*8,
   {DimensionData, ContentData} = split_binary(Data, DimensionDataSize),
   Lengths = [Length || <<Length:32, _:32>> <= DimensionData],
-  Decode = fun (Bin) -> pg_types:decode_value(Bin, ValueTypeName, TypeDb) end,
+  Decode = fun (Bin) -> pg_types:decode_value(Bin, ValueTypeName, Types) end,
   {Content, _} = decode_dimension(ContentData, Lengths, Decode),
   Content;
 decode(Data, _, _, [_]) ->

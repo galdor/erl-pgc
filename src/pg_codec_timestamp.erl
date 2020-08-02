@@ -18,7 +18,7 @@
 
 -define(REF_MICROSECONDS, 63_113_904_000_000_000). % 2000-01-01T00:00:00.0
 
--spec encode(pg:timestamp(), pg_types:type(), pg_types:type_db(), []) ->
+-spec encode(pg:timestamp(), pg_types:type(), pg_types:type_set(), []) ->
         iodata().
 encode(negative_infinity, _, _, []) ->
   <<-9223372036854775808:64/signed-integer>>;
@@ -30,7 +30,7 @@ encode({Date, {Hours, Minutes, Seconds, Microseconds}}, _, _, []) ->
   TotalMicroseconds = TotalSeconds*1_000_000 + Microseconds - ?REF_MICROSECONDS,
   <<TotalMicroseconds:64/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) ->
         pg:timestamp().
 decode(<<-9223372036854775808:64/signed-integer>>, _, _, []) ->
   negative_infinity;

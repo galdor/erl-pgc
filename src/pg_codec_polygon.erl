@@ -16,20 +16,20 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:polygon(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode(Points, _, TypeDb, []) ->
+-spec encode(pg:polygon(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode(Points, _, Types, []) ->
   NbPoints = length(Points),
   PointData = lists:map(fun (Point) ->
                             {Data, _} = pg_types:encode_value({point, Point},
-                                                              TypeDb),
+                                                              Types),
                             Data
                         end, Points),
   [<<NbPoints:32>>, PointData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:polygon().
-decode(<<NbPoints:32, Data/binary>>, _, TypeDb, []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:polygon().
+decode(<<NbPoints:32, Data/binary>>, _, Types, []) ->
   F = fun (_, <<PointData:16/binary, Rest/binary>>) ->
-          Point = pg_types:decode_value(PointData, point, TypeDb),
+          Point = pg_types:decode_value(PointData, point, Types),
           {Point, Rest}
       end,
   {Points, _} = lists:mapfoldl(F, Data, lists:seq(1, NbPoints)),

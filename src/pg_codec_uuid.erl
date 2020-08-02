@@ -16,10 +16,10 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:uuid(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(pg:uuid(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(UUID, _, _, []) ->
   UUID.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:uuid().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:uuid().
 decode(UUID, _, _, []) ->
   UUID.

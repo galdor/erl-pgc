@@ -16,12 +16,12 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(unicode:chardata(), pg_types:type(), pg_types:type_db(), list()) ->
-        iodata().
+-spec encode(unicode:chardata(), pg_types:type(), pg_types:type_set(),
+             list()) -> iodata().
 encode(S, _, _, []) ->
   unicode:characters_to_binary(S).
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) ->
         unicode:chardata().
 decode(Bin, _, _, []) ->
   unicode:characters_to_binary(Bin).

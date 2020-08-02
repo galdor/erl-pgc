@@ -16,17 +16,17 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:line_segment(), pg_types:type(), pg_types:type_db(), []) ->
+-spec encode(pg:line_segment(), pg_types:type(), pg_types:type_set(), []) ->
         iodata().
-encode({Start, End}, _, TypeDb, []) ->
-  {StartData, _} = pg_types:encode_value({point, Start}, TypeDb),
-  {EndData, _} = pg_types:encode_value({point, End}, TypeDb),
+encode({Start, End}, _, Types, []) ->
+  {StartData, _} = pg_types:encode_value({point, Start}, Types),
+  {EndData, _} = pg_types:encode_value({point, End}, Types),
   [StartData, EndData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) ->
         pg:line_segment().
-decode(<<StartData:16/binary, EndData:16/binary>>, _, TypeDb, []) ->
-  {pg_types:decode_value(StartData, point, TypeDb),
-   pg_types:decode_value(EndData, point, TypeDb)};
+decode(<<StartData:16/binary, EndData:16/binary>>, _, Types, []) ->
+  {pg_types:decode_value(StartData, point, Types),
+   pg_types:decode_value(EndData, point, Types)};
 decode(Data, _, _, []) ->
   error({invalid_data, Data}).

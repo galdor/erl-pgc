@@ -479,15 +479,15 @@ finalize_query_response(Response = #{rows := Rows}) ->
 finalize_query_response(Response) ->
   Response.
 
--spec query_response_to_query_result(query_response(), pg_types:type_db(),
+-spec query_response_to_query_result(query_response(), pg_types:type_set(),
                                      pg:query_options()) ->
         pg:query_result().
-query_response_to_query_result(#{error := Error}, _TypeDb, _Options) ->
+query_response_to_query_result(#{error := Error}, _Types, _Options) ->
   {error, Error};
 query_response_to_query_result(#{columns := ResponseColumns,
                                  rows := ResponseRows,
                                  command_tag := CommandTag},
-                               TypeDb, Options) ->
+                               Types, Options) ->
   NbAffectedRows = case CommandTag of
                      {_, Nb} -> Nb;
                      _ -> 0
@@ -496,14 +496,14 @@ query_response_to_query_result(#{columns := ResponseColumns,
   ColumnNames = [column_name(C, ColumnNamesAsAtoms) || C <- ResponseColumns],
   Oids = [Oid || #{type_oid := Oid} <- ResponseColumns],
   Rows = lists:map(fun (Row) ->
-                       decode_row(Row, Oids, TypeDb, ColumnNames, Options)
+                       decode_row(Row, Oids, Types, ColumnNames, Options)
                    end, ResponseRows),
   {ok, ColumnNames, Rows, NbAffectedRows}.
 
--spec decode_row(row(), [pg:oid()], pg_types:type_db(), [pg:column_name()],
+-spec decode_row(row(), [pg:oid()], pg_types:type_set(), [pg:column_name()],
                  pg:query_options()) -> pg:row().
-decode_row(Row, Oids, TypeDb, ColumnNames, Options) ->
-  Values = pg_types:decode_values(Row, Oids, TypeDb),
+decode_row(Row, Oids, Types, ColumnNames, Options) ->
+  Values = pg_types:decode_values(Row, Oids, Types),
   case maps:get(rows_as_hashes, Options, false) of
     true ->
       maps:from_list(lists:zip(ColumnNames, Values));

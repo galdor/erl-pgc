@@ -16,14 +16,14 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:interval(), pg_types:type(), pg_types:type_db(), []) ->
+-spec encode(pg:interval(), pg_types:type(), pg_types:type_set(), []) ->
         iodata().
 encode({Months, Days, Microseconds}, _, _, []) ->
   <<Microseconds:64/signed-integer,
     Days:32/signed-integer,
     Months:32/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) ->
         pg:interval().
 decode(<<Microseconds:64/signed-integer,
          Days:32/signed-integer,

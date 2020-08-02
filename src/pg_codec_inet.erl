@@ -16,15 +16,15 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:inet_address(), pg_types:type(), pg_types:type_db(), []) ->
+-spec encode(pg:inet_address(), pg_types:type(), pg_types:type_set(), []) ->
         iodata().
-encode({{A, B, C, D}, NetMask}, #{name := TypeName}, _, []) ->
+encode({{A, B, C, D}, NetMask}, {TypeName, _, _}, _, []) ->
   <<2:8, NetMask:8, (cidr_flag(TypeName)):8, 4:8, A:8, B:8, C:8, D:8>>;
-encode({{A, B, C, D, E, F, G, H}, NetMask}, #{name := TypeName}, _, []) ->
+encode({{A, B, C, D, E, F, G, H}, NetMask}, {TypeName, _, _}, _, []) ->
   <<3:8, NetMask:8, (cidr_flag(TypeName)):8, 16:8,
     A:16, B:16, C:16, D:16, E:16, F:16, G:16, H:16>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) ->
         pg:inet_address().
 decode(<<2:8, NetMask:8, _:8, 4:8, A:8, B:8, C:8, D:8>>,
        _, _, []) ->

@@ -16,12 +16,12 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(integer(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec encode(integer(), pg_types:type(), pg_types:type_set(), list()) ->
         iodata().
 encode(I, _, _, []) ->
   <<I:32>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), list()) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), list()) ->
         integer().
 decode(<<I:32>>, _, _, []) ->
   I;

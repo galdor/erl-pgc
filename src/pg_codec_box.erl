@@ -16,15 +16,15 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:box(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode({UpperRight, LowerLeft}, _, TypeDb, []) ->
-  {UpperRightData, _} = pg_types:encode_value({point, UpperRight}, TypeDb),
-  {LowerLeftData, _} = pg_types:encode_value({point, LowerLeft}, TypeDb),
+-spec encode(pg:box(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode({UpperRight, LowerLeft}, _, Types, []) ->
+  {UpperRightData, _} = pg_types:encode_value({point, UpperRight}, Types),
+  {LowerLeftData, _} = pg_types:encode_value({point, LowerLeft}, Types),
   [UpperRightData, LowerLeftData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:box().
-decode(<<UpperRightData:16/binary, LowerLeftData:16/binary>>, _, TypeDb, []) ->
-  {pg_types:decode_value(UpperRightData, point, TypeDb),
-   pg_types:decode_value(LowerLeftData, point, TypeDb)};
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:box().
+decode(<<UpperRightData:16/binary, LowerLeftData:16/binary>>, _, Types, []) ->
+  {pg_types:decode_value(UpperRightData, point, Types),
+   pg_types:decode_value(LowerLeftData, point, Types)};
 decode(Data, _, _, []) ->
   error({invalid_data, Data}).

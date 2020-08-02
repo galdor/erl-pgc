@@ -16,11 +16,11 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(0..255, pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(0..255, pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode(C, _, _, []) ->
   <<C:8>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> 0..255.
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> 0..255.
 decode(<<C:8>>, _, _, []) ->
   C;
 decode(Data, _, _, []) ->

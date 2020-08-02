@@ -16,13 +16,13 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:time(), pg_types:type(), pg_types:type_db(), []) -> iodata().
+-spec encode(pg:time(), pg_types:type(), pg_types:type_set(), []) -> iodata().
 encode({Hours, Minutes, Seconds, Microseconds}, _, _, []) ->
   TotalSeconds = Hours*3600 + Minutes*60 + Seconds,
   TotalMicroseconds = TotalSeconds * 1_000_000 + Microseconds,
   <<TotalMicroseconds:64/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:time().
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:time().
 decode(<<TotalMicroseconds:64/signed-integer>>, _, _, []) when
     TotalMicroseconds =< 86_400_000_000 ->
   US0 = TotalMicroseconds,

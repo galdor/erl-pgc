@@ -16,15 +16,15 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:point(), pg_types:type(), pg_types:type_db(), []) -> iodata().
-encode({X, Y}, _, TypeDb, []) ->
-  {XData, _} = pg_types:encode_value({float8, X}, TypeDb),
-  {YData, _} = pg_types:encode_value({float8, Y}, TypeDb),
+-spec encode(pg:point(), pg_types:type(), pg_types:type_set(), []) -> iodata().
+encode({X, Y}, _, Types, []) ->
+  {XData, _} = pg_types:encode_value({float8, X}, Types),
+  {YData, _} = pg_types:encode_value({float8, Y}, Types),
   [XData, YData].
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) -> pg:point().
-decode(<<XData:8/binary, YData:8/binary>>, _, TypeDb, []) ->
-  {pg_types:decode_value(XData, float8, TypeDb),
-   pg_types:decode_value(YData, float8, TypeDb)};
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) -> pg:point().
+decode(<<XData:8/binary, YData:8/binary>>, _, Types, []) ->
+  {pg_types:decode_value(XData, float8, Types),
+   pg_types:decode_value(YData, float8, Types)};
 decode(Data, _, _, []) ->
   error({invalid_data, Data}).

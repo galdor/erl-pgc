@@ -16,14 +16,14 @@
 
 -export([encode/4, decode/4]).
 
--spec encode(pg:time_with_timezone(), pg_types:type(), pg_types:type_db(),
+-spec encode(pg:time_with_timezone(), pg_types:type(), pg_types:type_set(),
              []) -> iodata().
 encode({Hours, Minutes, Seconds, Microseconds, Offset}, _, _, []) ->
   TotalSeconds = Hours*3600 + Minutes*60 + Seconds,
   TotalMicroseconds = TotalSeconds * 1_000_000 + Microseconds,
   <<TotalMicroseconds:64/signed-integer, (-Offset):32/signed-integer>>.
 
--spec decode(binary(), pg_types:type(), pg_types:type_db(), []) ->
+-spec decode(binary(), pg_types:type(), pg_types:type_set(), []) ->
         pg:time_with_timezone().
 decode(<<TotalMicroseconds:64/signed-integer, Offset:32/signed-integer>>,
        _, _, []) when
