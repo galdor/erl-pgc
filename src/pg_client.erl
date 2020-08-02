@@ -31,6 +31,7 @@
 
 -type options() :: #{host => inet:hostname() | inet:ip_address(),
                      port => inet:port_number(),
+                     tcp_options => [gen_tcp:connect_option()],
                      tls => boolean(),
                      user => unicode:chardata(),
                      password => unicode:chardata(),
@@ -46,6 +47,7 @@
 default_options() ->
   #{host => "localhost",
     port => 5432,
+    tcp_options => [],
     tls => false,
     application_name => "erl-pg",
     types => []}.
@@ -170,11 +172,11 @@ handle_info(Msg, State) ->
 -spec connect(state()) -> {ok, state()} | {error, term()}.
 connect(State) ->
   #{options := #{host := Host,
-                 port := Port}} = State,
+                 port := Port,
+                 tcp_options := TCPOptions}} = State,
   ?LOG_INFO("connecting to ~s:~b", [Host, Port]),
-  TCPOpts = [{active, false},
-             {mode, binary}],
-  case gen_tcp:connect(Host, Port, TCPOpts) of
+  TCPOptions2 = [{active, false}, {mode, binary}] ++ TCPOptions,
+  case gen_tcp:connect(Host, Port, TCPOptions2) of
     {ok, Socket} ->
       ?LOG_INFO("connection established"),
       State2 = State#{socket => Socket},
