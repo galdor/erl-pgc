@@ -112,7 +112,7 @@ find_type_by_name(Name, Types) ->
 
 -spec find_type_by_oid(pg:oid(), type_set()) -> type() | unknown_type.
 find_type_by_oid(Oid, Types) ->
-  Pred = fun ({Oid2, _, _}) -> Oid2 == Oid end,
+  Pred = fun ({_, Oid2, _}) -> Oid2 == Oid end,
   case lists:search(Pred, Types) of
     {value, Type} ->
       Type;
