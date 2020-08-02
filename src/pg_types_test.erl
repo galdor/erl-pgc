@@ -483,6 +483,20 @@ type_null(C) ->
                  query_row(C, "SELECT $1, $2, $3",
                            [null, {int4, null}, {{array, text}, [null]}]))].
 
+custom_types_test_() ->
+  {setup,
+   fun () ->
+       ReverseTextCodec = {pg_codec_reverse_text_test, []},
+       Types = [{text, 25, ReverseTextCodec}],
+       Options = pg_test:client_options(#{types => Types}),
+       pg_test:start_client(Options)
+   end,
+   fun pg_test:stop_client/1,
+   fun (C) ->
+       [?_assertEqual([<<"">>, <<"olleh">>, <<"dlrow">>],
+                      query_row(C, "SELECT '', 'hello', 'world'"))]
+   end}.
+
 -spec query_row(pg_client:ref(), unicode:chardata()) -> [term()].
 query_row(Client, Query) ->
   query_row(Client, Query, []).

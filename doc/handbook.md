@@ -4,6 +4,18 @@
 The erl-pg project is an Erlang client for the
 [PostgreSQL](https://www.postgresql.org) database.
 
+# Client
+**TODO**
+
+## Client options
+**TODO**
+
+# Pool
+**TODO**
+
+## Pool options
+**TODO**
+
 # Sending queries
 **TODO**
 
@@ -14,7 +26,22 @@ The following query options are available:
 - `rows_as_hashes`: return rows as hashes associating column name to value
   instead of lists of values.
 
-# Type and value mapping
+# Types and values
+For encoding, Erlang types are mapped to PostgreSQL types directly when it
+makes sense (for example for booleans) or using a `{PgType, Value}` tuple. For
+example, `{point, {1.0, -2.0}}` represents the PostgreSQL point `(1.0, -2.0)`.
+
+Array types are represented by a `{array, ElementType}` typle. For example,
+`{{array, int4}, [1, 2, 3]}` represents the PostgreSQL integer array `ARRAY[1,
+2, 3]::int4`.
+
+For decoding, PostgreSQL types are mapped to a variety of Erlang types. The
+type itself is never included in returned value. For example, the PostgreSQL
+array `ARRAY[1, 2, 3]::int4[]` will be decoded to `[1, 2, 3]`.
+
+Additional types can be provided to each client for custom encoding and
+decoding. Custom types will override internal types defined in erl-pg.
+
 ## Erlang types to PostgreSQL types
 | Erlang type                                  | PostgreSQL type |
 |----------------------------------------------|-----------------|
@@ -65,6 +92,7 @@ The following query options are available:
 | `varbit`        | `bitstring()`                                | `<<1:1,0:1,1:1>>`                                             |
 | `uuid`          | `pg:uuid()`                                  | `<<3,172,86,36,126,103,79,211,178,40,23,231,189,76,180,179>>` |
 | `jsonb`         | `binary()`                                   | `<<"[1,2,3]">>`                                               |
+| `Type[]`        | `list()`                                     | `[1, 2, 3]`                                                   |
 
 ## NULL
 The SQL `NULL` value is represented by the `null` Erlang atom.
