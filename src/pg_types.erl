@@ -14,7 +14,8 @@
 
 -module(pg_types).
 
--export([encode_values/2, encode_value/2,
+-export([empty_type_set/0,
+         encode_values/2, encode_value/2,
          decode_values/3, decode_value/3,
          find_type_by_name/2, find_type_by_oid/2]).
 
@@ -26,6 +27,10 @@
 -type type_name() :: atom() | {array, atom()}.
 
 -type codec() :: {module(), list()}.
+
+-spec empty_type_set() -> type_set().
+empty_type_set() ->
+  [].
 
 -spec encode_values(list(), type_set()) -> {pg_proto:row(), [pg:oid()]}.
 encode_values(Values, Types) ->

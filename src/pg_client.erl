@@ -327,7 +327,7 @@ recv_simple_query_response(State, Response) ->
         {ok, pg:query_result()} | {error, term()}.
 send_extended_query(Query, Params, QueryOptions, State) ->
   #{options := Options} = State,
-  Types = maps:get(types, Options, []),
+  Types = maps:get(types, Options, pg_types:empty_type_set()),
   {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, Types),
   send([pg_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),
         pg_proto:encode_bind_msg(<<>>, <<>>, EncodedParams),
