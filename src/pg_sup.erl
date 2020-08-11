@@ -38,7 +38,5 @@ pool_child_specs() ->
 
 -spec pool_child_spec(pool_spec()) -> supervisor:child_spec().
 pool_child_spec({ChildId, Options}) ->
-  Options2 = pg_pool:options(Options),
-  Name = {local, ChildId},
   #{id => ChildId,
-    start => {pg_pool, start_link, [Name, Options2]}}.
+    start => {pg_pool, start_link, [{local, ChildId}, Options]}}.

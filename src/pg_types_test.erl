@@ -488,8 +488,7 @@ custom_types_test_() ->
    fun () ->
        ReverseTextCodec = {pg_codec_reverse_text_test, []},
        Types = [{text, 25, ReverseTextCodec}],
-       Options = pg_test:client_options(#{types => Types}),
-       pg_test:start_client(Options)
+       pg_test:start_client(#{types => Types})
    end,
    fun pg_test:stop_client/1,
    fun (C) ->

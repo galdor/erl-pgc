@@ -14,19 +14,13 @@
 
 -module(pg_test).
 
--export([client_options/0, client_options/1,
+-export([client_options/0,
          start_client/0, start_client/1, stop_client/1]).
 
 -spec client_options() -> pg_client:options().
 client_options() ->
-  client_options(#{}).
-
--spec client_options(pg_client:options()) -> pg_client:options().
-client_options(Options) ->
-  Options2 = maps:merge(#{user => "erl-pg-test",
-                          database => "erl-pg-test"},
-                        Options),
-  pg_client:options(Options2).
+  #{user => "erl-pg-test",
+    database => "erl-pg-test"}.
 
 -spec start_client() -> pg_client:client().
 start_client() ->
@@ -34,7 +28,8 @@ start_client() ->
 
 -spec start_client(pg_client:options()) -> pg_client:client().
 start_client(Options) ->
-  {ok, Client} = pg_client:start_link(Options),
+  Options2 = maps:merge(client_options(), Options),
+  {ok, Client} = pg_client:start_link(Options2),
   Client.
 
 -spec stop_client(pg_client:client()) -> ok.

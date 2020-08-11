@@ -18,8 +18,7 @@
 
 -behaviour(gen_server).
 
--export([default_options/0, options/1,
-         start_link/0, start_link/1, start_link/2, stop/1,
+-export([start_link/0, start_link/1, start_link/2, stop/1,
          exec/2, exec/3, exec/4, query/2, query/3, query/4]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
@@ -44,20 +43,6 @@
                    socket => inet:socket(),
                    ssl_socket => ssl:sslsocket()}.
 
--spec default_options() -> options().
-default_options() ->
-  #{host => "localhost",
-    port => 5432,
-    tcp_options => [],
-    tls => false,
-    tls_options => [],
-    application_name => "erl-pg",
-    types => []}.
-
--spec options(options()) -> options().
-options(Options) ->
-  maps:merge(default_options(), Options).
-
 -spec validate_options(options()) -> ok.
 validate_options(Options) ->
   maps:is_key(user, Options) orelse error(missing_user),
@@ -67,14 +52,14 @@ validate_options(Options) ->
 -spec start_link() -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link() ->
-  start_link(default_options()).
+  start_link(#{}).
 
 -spec start_link(name() | options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link(Options) when is_map(Options) ->
   gen_server:start_link(?MODULE, [Options], []);
 start_link(Name) ->
-  start_link(Name, default_options()).
+  start_link(Name, #{}).
 
 -spec start_link(name(), options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
@@ -172,10 +157,10 @@ handle_info(Msg, State) ->
   {noreply, State}.
 
 -spec connect(state()) -> {ok, state()} | {error, term()}.
-connect(State) ->
-  #{options := #{host := Host,
-                 port := Port,
-                 tcp_options := TCPOptions}} = State,
+connect(State = #{options := Options}) ->
+  Host = maps:get(host, Options, "localhost"),
+  Port = maps:get(port, Options, 5432),
+  TCPOptions = maps:get(tcp_options, Options, []),
   ?LOG_INFO("connecting to ~s:~b", [Host, Port]),
   TCPOptions2 = [{active, false}, {mode, binary}] ++ TCPOptions,
   case gen_tcp:connect(Host, Port, TCPOptions2) of
@@ -198,9 +183,8 @@ maybe_tls_connect(#{options := Options} = State) ->
   end.
 
 -spec tls_connect(state()) -> {ok, state()} | {error, term()}.
-tls_connect(State) ->
-  #{options := #{tls_options := TLSOptions},
-    socket := Socket} = State,
+tls_connect(State = #{options := Options, socket := Socket}) ->
+  TLSOptions = maps:get(tls_options, Options, []),
   send(pg_proto:encode_ssl_request_msg(), State),
   case gen_tcp:recv(Socket, 1) of
     {ok, <<"S">>} ->
@@ -219,10 +203,10 @@ tls_connect(State) ->
   end.
 
 -spec begin_startup(state()) -> {ok, state()} | {error, term()}.
-begin_startup(State) ->
-  #{options := #{user := User,
-                 database := Database,
-                 application_name := ApplicationName}} = State,
+begin_startup(State = #{options := Options}) ->
+  User = maps:get(user, Options),
+  Database = maps:get(database, Options),
+  ApplicationName = maps:get(application_name, Options, <<"erl-pg">>),
   Parameters = #{user => User,
                  database => Database,
                  application_name => ApplicationName},
@@ -230,8 +214,7 @@ begin_startup(State) ->
   {ok, State}.
 
 -spec authenticate(state()) -> {ok, state()} | {error, term()}.
-authenticate(State) ->
-  #{options := Options} = State,
+authenticate(State = #{options := Options}) ->
   User = maps:get(user, Options),
   Password = maps:get(password, Options, undefined),
   case recv_msg(State) of
@@ -342,8 +325,9 @@ recv_simple_query_response(State, Response) ->
 -spec send_extended_query(Query :: iodata(), Params :: [term()],
                           pg:query_options(), state()) ->
         {ok, pg:query_result()} | {error, term()}.
-send_extended_query(Query, Params, Options, State) ->
-  #{options := #{types := Types}} = State,
+send_extended_query(Query, Params, QueryOptions, State) ->
+  #{options := Options} = State,
+  Types = maps:get(types, Options, []),
   {EncodedParams, ParamTypeOids} = pg_types:encode_values(Params, Types),
   send([pg_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),
         pg_proto:encode_bind_msg(<<>>, <<>>, EncodedParams),
@@ -353,7 +337,7 @@ send_extended_query(Query, Params, Options, State) ->
        State),
   case recv_extended_query_response(State, pg_proto:query_response()) of
     {ok, Response} ->
-      pg_proto:query_response_to_query_result(Response, Types, Options);
+      pg_proto:query_response_to_query_result(Response, Types, QueryOptions);
     {error, Reason} ->
       {error, Reason}
   end.

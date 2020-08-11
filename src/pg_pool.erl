@@ -18,7 +18,7 @@
 
 -behaviour(gen_server).
 
--export([default_options/0, options/1, start_link/1, start_link/2, stop/1,
+-export([start_link/1, start_link/2, stop/1,
          stats/1, acquire/1, release/2,
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
@@ -50,22 +50,10 @@
 
 -type request() :: {From :: {pid(), term()}, Time :: integer()}.
 
--spec default_options() -> options().
-default_options() ->
-  #{client_options => pg_client:default_options(),
-    max_nb_clients => 10,
-    request_timeout => 1000}.
-
--spec options(options()) -> options().
-options(Options) ->
-  ClientOptions = maps:get(client_options, Options, #{}),
-  Options2 = maps:merge(default_options(), Options),
-  Options2#{client_options => pg_client:options(ClientOptions)}.
-
 -spec start_link(pool_name()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link(Name) ->
-  start_link(Name, default_options()).
+  start_link(Name, #{}).
 
 -spec start_link(pool_name(), options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
@@ -171,10 +159,11 @@ terminate(_Reason, #{free_clients := FreeClients,
   ok.
 
 handle_call(stats, _From, State) ->
-  #{options := #{max_nb_clients := MaxNbClients},
+  #{options := Options,
     free_clients := FreeClients,
     busy_clients := BusyClients,
     requests := Requests} = State,
+  MaxNbClients = max_nb_clients(Options),
   NbFreeClients = length(FreeClients),
   NbBusyClients = length(BusyClients),
   Stats = #{nb_clients => NbFreeClients + NbBusyClients,
@@ -190,33 +179,29 @@ handle_call(acquire, _From,
   State2 = State#{free_clients => FreeClients,
                   busy_clients => [Client | BusyClients]},
   {reply, {ok, Client}, State2};
-handle_call(acquire, _From,
-            State = #{options := #{client_options := ClientOptions,
-                                   max_nb_clients := MaxNbClients},
+handle_call(acquire, From,
+            State = #{options := Options,
                       free_clients := [],
-                      busy_clients := BusyClients}) when
-    length(BusyClients) < MaxNbClients ->
-  %% The client limit has not been reached, we can create a new one.
-  case pg_client:start_link(ClientOptions) of
-    {ok, Client} ->
-      #{host := Host,
-        port := Port,
-        user := User,
-        database := Db} = ClientOptions,
-      ?LOG_INFO("connected to database ~p at ~s:~B as user ~p: ~n",
-                [Db, Host, Port, User]),
-      State2 = State#{busy_clients => [Client | BusyClients]},
-      {reply, {ok, Client}, State2};
-    {error, Reason} ->
-      ?LOG_ERROR("cannot establish connection: ~p~n", [Reason]),
-      {reply, {error, {client_error, Reason}}, State}
+                      busy_clients := BusyClients}) ->
+  ClientOptions = maps:get(client_options, Options, #{}),
+  MaxNbClients = max_nb_clients(Options),
+  case length(BusyClients) < MaxNbClients of
+    true ->
+      %% The client limit has not been reached, we can create a new one.
+      case pg_client:start_link(ClientOptions) of
+        {ok, Client} ->
+          State2 = State#{busy_clients => [Client | BusyClients]},
+          {reply, {ok, Client}, State2};
+        {error, Reason} ->
+          {reply, {error, {client_error, Reason}}, State}
+      end;
+    false ->
+      %% There is no available client and we cannot create a new one, so we
+      %% enqueue the request.
+      Request = {From, erlang:monotonic_time(millisecond)},
+      State2 = insert_request(Request, State),
+      {noreply, State2}
   end;
-handle_call(acquire, From, State) ->
-  %% There is no available client and we cannot create a new one, so we
-  %% enqueue the request.
-  Request = {From, erlang:monotonic_time(millisecond)},
-  State2 = insert_request(Request, State),
-  {noreply, State2};
 
 handle_call({release, Client}, _From,
             State = #{free_clients := FreeClients,
@@ -296,8 +281,9 @@ handle_info(Msg, State) ->
 
 -spec insert_request(request(), state()) -> state().
 insert_request(Request, State) ->
-  #{options := #{request_timeout := Timeout},
+  #{options := Options,
     requests := Requests} = State,
+  Timeout = maps:get(request_timeout, Options, 1000),
   Empty = queue:is_empty(Requests),
   State2 = State#{requests => queue:in(Request, Requests)},
   %% If the request queue was empty before the insertion, schedule a new timer
@@ -323,8 +309,9 @@ pop_request(Request, State) ->
 
 -spec pop_oldest_request(state()) -> {request, request(), state()} | no_request.
 pop_oldest_request(State) ->
-  #{options := #{request_timeout := Timeout},
+  #{options := Options,
     requests := Requests} = State,
+  Timeout = maps:get(request_timeout, Options, 1000),
   case queue:out(Requests) of
     {{value, Request}, Requests2} ->
       {OldTimer, State2} = maps:take(request_timer, State),
@@ -351,3 +338,7 @@ pop_oldest_request(State) ->
 -spec schedule_request_timeout(request(), Delay ::pos_integer()) -> reference().
 schedule_request_timeout(Request, Delay) ->
   erlang:send_after(Delay, self(), {request_timeout, Request}).
+
+-spec max_nb_clients(options()) -> pos_integer().
+max_nb_clients(#{max_nb_clients := N}) -> N;
+max_nb_clients(_) -> 10.

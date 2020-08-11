@@ -62,8 +62,7 @@ stop() ->
   ?assertNot(is_process_alive(Client2)).
 
 client_init_error() ->
-  ClientOptions = pg_test:client_options(#{database => "does_not_exist"}),
-  Pool = test_pool(#{client_options => ClientOptions}),
+  Pool = test_pool(#{client_options => #{database => "does_not_exist"}}),
   ?assertMatch({error, {client_error, #{code := invalid_catalog_name}}},
                pg_pool:acquire(Pool)),
   pg_pool:stop(Pool).
@@ -251,15 +250,19 @@ stress() ->
                 end, Processes),
   pg_pool:stop(Pool).
 
-test_pool(ExtraOptions) ->
-  Options = maps:merge(#{client_options => pg_test:client_options(),
+-spec test_pool(pg_pool:options()) -> pg_pool:pool_ref().
+test_pool(ExtraOptions0) ->
+  ExtraClientOptions = maps:get(client_options, ExtraOptions0, #{}),
+  ClientOptions = maps:merge(pg_test:client_options(), ExtraClientOptions),
+  ExtraOptions = ExtraOptions0#{client_options => ClientOptions},
+  Options = maps:merge(#{client_options => ClientOptions,
                          max_nb_clients => 10,
                          request_timeout => 1000},
                        ExtraOptions),
-  Options2 = pg_pool:options(Options),
-  {ok, Pool} = pg_pool:start_link({local, pg_pool_test}, Options2),
+  {ok, Pool} = pg_pool:start_link({local, pg_pool_test}, Options),
   Pool.
 
+-spec close_client(pg_client:ref()) -> ok.
 close_client(Client) ->
   monitor(process, Client),
   pg_client:stop(Client),
