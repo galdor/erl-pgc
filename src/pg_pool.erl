@@ -50,8 +50,10 @@
 
 -type request() :: {From :: {pid(), term()}, Time :: integer()}.
 
--spec start_link(pool_name()) -> Result when
+-spec start_link(pool_name() | options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
+start_link(Options) when is_map(Options) ->
+  gen_server:start_link(?MODULE, [Options], []);
 start_link(Name) ->
   start_link(Name, #{}).
 
