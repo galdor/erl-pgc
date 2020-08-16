@@ -105,7 +105,7 @@ query(Ref, Query, Params, Options) ->
   gen_server:call(Ref, {extended_query, Query, Params, Options}, infinity).
 
 init([Options]) ->
-  logger:update_process_metadata(#{domain => [pg]}),
+  logger:update_process_metadata(#{domain => [pg, client]}),
   validate_options(Options),
   State = #{options => Options},
   Steps = [fun connect/1,

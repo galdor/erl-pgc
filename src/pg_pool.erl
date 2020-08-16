@@ -142,7 +142,7 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
   with_client(PoolRef, Fun2).
 
 init([Options]) ->
-  logger:update_process_metadata(#{domain => [pg_pool]}),
+  logger:update_process_metadata(#{domain => [pg, pool]}),
   process_flag(trap_exit, true),
   State = #{options => Options,
             free_clients => [],
