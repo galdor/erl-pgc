@@ -14,10 +14,8 @@
 
 -module(pg).
 
--export([default_query_options/0, query_options/1]).
 -export([start_pool/2]).
 
--export_type([query_options/0, query_result/0, exec_result/0,
 -export_type([pool_id/0,
               query_options/0, query_result/0, exec_result/0,
               column_name/0, row/0,
@@ -79,15 +77,7 @@
 
 -type uuid() :: <<_:128>>.
 
--spec default_query_options() -> query_options().
-default_query_options() ->
-  #{column_names_as_atoms => false,
-    rows_as_hashes => false}.
 -spec start_pool(pg:pool_id(), pg_pool:options()) ->
         supervisor:startchild_ret().
 start_pool(Id, Options) ->
   pg_sup:start_pool(Id, Options).
-
--spec query_options(query_options()) -> query_options().
-query_options(Options) ->
-  maps:merge(default_query_options(), Options).

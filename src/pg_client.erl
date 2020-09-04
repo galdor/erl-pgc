@@ -72,12 +72,12 @@ stop(Ref) ->
 
 -spec exec(ref(), Query :: unicode:chardata()) -> pg:exec_result().
 exec(Ref, Query)  ->
-  exec(Ref, Query, [], pg:default_query_options()).
+  exec(Ref, Query, [], #{}).
 
 -spec exec(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:exec_result().
 exec(Ref, Query, Params) ->
-  exec(Ref, Query, Params, pg:default_query_options()).
+  exec(Ref, Query, Params, #{}).
 
 -spec exec(ref(), Query :: unicode:chardata(), Params :: [term()],
            pg:query_options()) -> pg:exec_result().
@@ -92,12 +92,12 @@ exec(Ref, Query, Params, Options) ->
 
 -spec query(ref(), Query :: unicode:chardata()) -> pg:query_result().
 query(Ref, Query) ->
-  query(Ref, Query, [], pg:default_query_options()).
+  query(Ref, Query, [], #{}).
 
 -spec query(ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         pg:query_result().
 query(Ref, Query, Params) ->
-  query(Ref, Query, Params, pg:default_query_options()).
+  query(Ref, Query, Params, #{}).
 
 -spec query(ref(), Query :: unicode:chardata(), Params :: [term()],
             pg:query_options()) -> pg:query_result().
