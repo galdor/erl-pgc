@@ -18,7 +18,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/1, start_link/2, stop/1,
+-export([process_name/1, start_link/1, start_link/2, stop/1,
          stats/1, acquire/1, release/2,
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
@@ -49,6 +49,11 @@
                    request_timer => reference()}.
 
 -type request() :: {From :: {pid(), term()}, Time :: integer()}.
+
+-spec process_name(pg:pool_id()) -> atom().
+process_name(Id) ->
+  Name = <<"pg_pool_", (atom_to_binary(Id))/binary>>,
+  binary_to_atom(Name).
 
 -spec start_link(pool_name() | options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.

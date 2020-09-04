@@ -11,7 +11,23 @@ The erl-pg project is an Erlang client for the
 **TODO**
 
 # Pool
-**TODO**
+## Configuration
+Pools are created by `pg_sup` supervisor based on the configuration of the
+`pg` application. Pools are identified by an atom. Each pool process is
+registered as `pg_pool_<id>` where `<id>` is its identifier. For example, the
+process of the `example` pool is registered as `pg_pool_example`.
+
+The following example configures a pool named `example`:
+
+```erlang
+[{pg,
+  [{pools,
+    #{example => #{client_options => #{user => "test",
+                                       database => "test"}}}}]}].
+```
+
+Pools can also be created with the `pg:start_pool/2` function; these pools
+are also handled by the `pg_sup` supervisor.
 
 ## Pool options
 **TODO**

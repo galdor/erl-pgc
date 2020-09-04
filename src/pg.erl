@@ -15,8 +15,11 @@
 -module(pg).
 
 -export([default_query_options/0, query_options/1]).
+-export([start_pool/2]).
 
 -export_type([query_options/0, query_result/0, exec_result/0,
+-export_type([pool_id/0,
+              query_options/0, query_result/0, exec_result/0,
               column_name/0, row/0,
               oid/0, float_value/0,
               point/0, line_segment/0, path/0, box/0, polygon/0, line/0,
@@ -25,6 +28,8 @@
               date/0, time/0, time_with_timezone/0, timestamp/0,
               interval/0,
               uuid/0]).
+
+-type pool_id() :: atom().
 
 -type query_options() :: #{column_names_as_atoms => boolean(),
                            rows_as_hashes => boolean()}.
@@ -78,6 +83,10 @@
 default_query_options() ->
   #{column_names_as_atoms => false,
     rows_as_hashes => false}.
+-spec start_pool(pg:pool_id(), pg_pool:options()) ->
+        supervisor:startchild_ret().
+start_pool(Id, Options) ->
+  pg_sup:start_pool(Id, Options).
 
 -spec query_options(query_options()) -> query_options().
 query_options(Options) ->

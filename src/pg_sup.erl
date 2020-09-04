@@ -16,13 +16,17 @@
 
 -behaviour(supervisor).
 
--export([start_link/0]).
+-export([start_link/0, start_pool/2]).
 -export([init/1]).
 
--type pool_spec() :: {Id :: atom(), pg_pool:options()}.
-
+-spec start_link() -> supervisor:startlink_ret().
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+-spec start_pool(pg:pool_id(), pg_pool:options()) ->
+        supervisor:startchild_ret().
+start_pool(Id, Options) ->
+  supervisor:start_child(?MODULE, pool_child_spec(Id, Options)).
 
 init([]) ->
   Children = pool_child_specs(),
@@ -34,9 +38,13 @@ init([]) ->
 -spec pool_child_specs() -> [supervisor:child_spec()].
 pool_child_specs() ->
   PoolSpecs = application:get_env(pg, pools, []),
-  lists:map(fun pool_child_spec/1, PoolSpecs).
+  maps:fold(fun (Id, Options, Acc) ->
+                [pool_child_spec(Id, Options) | Acc]
+            end,
+            [], PoolSpecs).
 
--spec pool_child_spec(pool_spec()) -> supervisor:child_spec().
-pool_child_spec({ChildId, Options}) ->
+-spec pool_child_spec(pg:pool_id(), pg_pool:options()) -> supervisor:child_spec().
+pool_child_spec(ChildId, Options) ->
+  Name = pg_pool:process_name(ChildId),
   #{id => ChildId,
-    start => {pg_pool, start_link, [{local, ChildId}, Options]}}.
+    start => {pg_pool, start_link, [{local, Name}, Options]}}.
