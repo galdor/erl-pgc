@@ -73,15 +73,15 @@ stop(PoolRef) ->
 
 -spec stats(pool_ref()) -> stats().
 stats(PoolRef) ->
-  gen_server:call(PoolRef, stats).
+  gen_server:call(PoolRef, stats, infinity).
 
 -spec acquire(pool_ref()) -> {ok, pg_client:client()} | {error, term()}.
 acquire(PoolRef) ->
-  gen_server:call(PoolRef, acquire).
+  gen_server:call(PoolRef, acquire, infinity).
 
 -spec release(pool_ref(), pg_client:client()) -> ok.
 release(PoolRef, Client) ->
-  gen_server:call(PoolRef, {release, Client}).
+  gen_server:call(PoolRef, {release, Client}, infinity).
 
 -spec with_client(pool_ref(), client_fun()) -> term() | {error, term()}.
 with_client(PoolRef, Fun) ->
