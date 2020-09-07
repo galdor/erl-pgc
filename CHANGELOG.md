@@ -1,6 +1,8 @@
 % erl-pg changelog
 
 # Next Version
+
+# 1.1.0
 ## Features
 - It is now possible to start supervised pools using `pg:start_pool/2`.
 - Pool processes are now registered with a name based on the id provided in
