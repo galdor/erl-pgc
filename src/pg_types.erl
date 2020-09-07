@@ -205,7 +205,7 @@ oid_to_type(3802) -> {jsonb, {pg_codec_jsonb, []}};
 oid_to_type(3807) -> {{array, jsonb}, {pg_codec_array, [jsonb]}};
 oid_to_type(_) -> unknown_oid.
 
--spec name_to_oid(pg:type_name()) -> pg:oid() | unknown_name.
+-spec name_to_oid(pg_types:type_name()) -> pg:oid() | unknown_name.
 name_to_oid(bit) -> 1560;
 name_to_oid(boolean) -> 16;
 name_to_oid(box) -> 603;

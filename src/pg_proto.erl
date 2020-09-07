@@ -24,7 +24,8 @@
          finalize_query_response/1, query_response_to_query_result/3]).
 
 -export_type([msg_type/0, msg/0, error_and_notice_fields/0, severity/0,
-              query_response/0, transaction_status/0]).
+              query_response/0, transaction_status/0, command_tag/0,
+              column/0, row/0, row_field/0]).
 
 -type msg_type() :: byte().
 
@@ -39,7 +40,7 @@
              | {backend_key_data, Pid :: integer(), Key :: integer()}
              | bind_complete
              | {command_complete, pg_proto:command_tag()}
-             | {data_row, pg_query:row()}
+             | {data_row, pg_proto:row()}
              | empty_query_response
              | {error_response, error_and_notice_fields()}
              | no_data
@@ -47,7 +48,7 @@
              | {parameter_status, Name :: binary(), Value :: binary()}
              | parse_complete
              | {ready_for_query, transaction_status()}
-             | {row_description, [pg_queries:column()]}.
+             | {row_description, [pg_proto:column()]}.
 
 -type error_and_notice_fields() :: #{l10n_severity := severity(),
                                      severity := severity(),

@@ -24,6 +24,8 @@
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
 -export_type([options/0, pool_name/0, pool_ref/0, client_fun/0]).
+-export_type([options/0, pool_name/0, pool_ref/0, client_fun/0,
+              stats/0]).
 
 -type options() :: #{client_options => pg_client:options(),
                      max_nb_clients => pos_integer(),
@@ -33,7 +35,7 @@
 -type pool_ref() :: term() | {term(), atom()} | {global, term()}
                   | {via, atom(), term()} | pid().
 
--type client_fun() :: fun((pg_client:client()) ->
+-type client_fun() :: fun((pg_client:ref()) ->
                              ok | {ok, term()} | {error, term()}).
 
 -type stats() :: #{nb_clients := non_neg_integer(),
@@ -43,8 +45,8 @@
                    nb_requests := non_neg_integer()}.
 
 -type state() :: #{options := options(),
-                   free_clients := [pg_client:client()],
-                   busy_clients := [pg_client:client()],
+                   free_clients := [pg_client:ref()],
+                   busy_clients := [pg_client:ref()],
                    requests := queue:queue(request()),
                    request_timer => reference()}.
 
@@ -75,11 +77,11 @@ stop(PoolRef) ->
 stats(PoolRef) ->
   gen_server:call(PoolRef, stats, infinity).
 
--spec acquire(pool_ref()) -> {ok, pg_client:client()} | {error, term()}.
+-spec acquire(pool_ref()) -> {ok, pg_client:ref()} | {error, term()}.
 acquire(PoolRef) ->
   gen_server:call(PoolRef, acquire, infinity).
 
--spec release(pool_ref(), pg_client:client()) -> ok.
+-spec release(pool_ref(), pg_client:ref()) -> ok.
 release(PoolRef, Client) ->
   gen_server:call(PoolRef, {release, Client}, infinity).
 
