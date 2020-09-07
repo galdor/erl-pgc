@@ -19,8 +19,8 @@
   {mod, {pg_app, []}},
   {applications,
    [kernel,
-    stdlib
-   ]},
+    stdlib,
+    ssl]},
   {env, []},
   {modules, []},
 
