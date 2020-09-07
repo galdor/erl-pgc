@@ -22,16 +22,16 @@ client_options() ->
   #{user => "erl-pg-test",
     database => "erl-pg-test"}.
 
--spec start_client() -> pg_client:client().
+-spec start_client() -> pg_client:ref().
 start_client() ->
   start_client(client_options()).
 
--spec start_client(pg_client:options()) -> pg_client:client().
+-spec start_client(pg_client:options()) -> pg_client:ref().
 start_client(Options) ->
   Options2 = maps:merge(client_options(), Options),
   {ok, Client} = pg_client:start_link(Options2),
   Client.
 
--spec stop_client(pg_client:client()) -> ok.
+-spec stop_client(pg_client:ref()) -> ok.
 stop_client(Client) ->
   pg_client:stop(Client).

@@ -89,7 +89,7 @@ with_client_close() ->
               pg_pool:with_client(Pool,
                                       fun (Client) ->
                                           close_client(Client),
-                                          pg_client:query(Client, "SELECT 42")
+                                          pg:query(Client, "SELECT 42")
                                       end)),
   ?assertMatch(#{nb_clients := 0,
                  nb_free_clients := 0,
@@ -99,9 +99,9 @@ with_client_close() ->
 
 with_transaction() ->
   Pool = test_pool(#{}),
-  Fun1 = fun (Client) -> pg_client:query(Client, "SELECT 42") end,
+  Fun1 = fun (Client) -> pg:query(Client, "SELECT 42") end,
   ?assertMatch({ok, [_], [[_]], 1}, pg_pool:with_transaction(Pool, Fun1)),
-  Fun2 = fun (Client) -> pg_client:query(Client, "FOO") end,
+  Fun2 = fun (Client) -> pg:query(Client, "FOO") end,
   ?assertMatch({error, _}, pg_pool:with_transaction(Pool, Fun2)),
   Fun3 = fun (_Client) -> throw(test) end,
   ?assertThrow(test, pg_pool:with_transaction(Pool, Fun3)),
@@ -115,12 +115,12 @@ with_transaction_rollback() ->
   Pool = test_pool(#{}),
   Table = atom_to_binary(?FUNCTION_NAME),
   Fun1 = fun (Client) ->
-             {ok, _} = pg_client:exec(Client, ["CREATE TABLE ", Table, "()"]),
+             {ok, _} = pg:exec(Client, ["CREATE TABLE ", Table, "()"]),
              error(test)
          end,
   ?assertError(test, pg_pool:with_transaction(Pool, Fun1)),
   Fun2 = fun (Client) ->
-             pg_client:query(Client, ["DROP TABLE ", Table])
+             pg:query(Client, ["DROP TABLE ", Table])
          end,
   ?assertMatch({error, #{code := undefined_table}},
                pg_pool:with_client(Pool, Fun2)),
@@ -130,13 +130,13 @@ with_transaction_commit_failure() ->
   Pool = test_pool(#{}),
   Table = atom_to_binary(?FUNCTION_NAME),
   Fun1 = fun (Client) ->
-             {ok, _} = pg_client:exec(Client, ["CREATE TABLE ", Table,
-                                               "(i INTEGER UNIQUE DEFERRABLE ",
-                                               "INITIALLY DEFERRED)"]),
-             {ok, _} = pg_client:exec(Client, ["INSERT INTO ", Table, "(i)",
-                                               " VALUES (1)"]),
-             {ok, _} = pg_client:exec(Client, ["INSERT INTO ", Table, "(i)",
-                                               " VALUES (1)"])
+             {ok, _} = pg:exec(Client, ["CREATE TABLE ", Table,
+                                        "(i INTEGER UNIQUE DEFERRABLE ",
+                                        "INITIALLY DEFERRED)"]),
+             {ok, _} = pg:exec(Client, ["INSERT INTO ", Table, "(i)",
+                                        " VALUES (1)"]),
+             {ok, _} = pg:exec(Client, ["INSERT INTO ", Table, "(i)",
+                                        " VALUES (1)"])
          end,
   ?assertMatch({error, {commit_failure, #{code := unique_violation}}},
                pg_pool:with_transaction(Pool, Fun1)),
@@ -230,7 +230,7 @@ stress() ->
   ProcessFun = fun F() ->
                    case pg_pool:acquire(Pool) of
                      {ok, Client} ->
-                       {ok, _} = pg_client:exec(Client, "SELECT 42"),
+                       {ok, _} = pg:exec(Client, "SELECT 42"),
                        timer:sleep(AcquisitionDuration),
                        pg_pool:release(Pool, Client),
                        F();

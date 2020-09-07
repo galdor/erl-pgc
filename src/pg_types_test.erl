@@ -336,7 +336,7 @@ type_time(C) ->
 type_timetz(C) ->
   {setup,
    fun() ->
-       {ok, _} = pg_client:exec(C, "SET timezone='GMT'")
+       {ok, _} = pg:exec(C, "SET timezone='GMT'")
    end,
    [?_assertEqual([{14, 10, 5, 4500, 7200}],
                   query_row(C, "SELECT '14:10:05.0045+02:00'::timetz")),
@@ -388,7 +388,7 @@ type_timestamp(C) ->
 type_timestamptz(C) ->
   {setup,
    fun() ->
-       {ok, _} = pg_client:exec(C, "SET timezone='GMT'")
+       {ok, _} = pg:exec(C, "SET timezone='GMT'")
    end,
    [?_assertEqual([{{2020, 3, 1}, {15, 20, 30, 3500}}],
                   query_row(C, "SELECT '2020-03-01T15:20:30.0035'" ++
@@ -511,5 +511,5 @@ query_row(Client, Query, Params) ->
 
 -spec query_rows(pg_client:ref(), unicode:chardata(), [term()]) -> [[term()]].
 query_rows(Client, Query, Params) ->
-  {ok, _, Rows, _} = pg_client:query(Client, Query, Params),
+  {ok, _, Rows, _} = pg:query(Client, Query, Params),
   Rows.

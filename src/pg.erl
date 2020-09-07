@@ -14,7 +14,12 @@
 
 -module(pg).
 
--export([start_pool/2]).
+-export([start_pool/2,
+         pool_stats/1,
+         acquire/1, release/2,
+         with_client/2, with_transaction/2,
+         exec/2, exec/3, exec/4,
+         query/2, query/3, query/4]).
 
 -export_type([pool_id/0,
               query_options/0, query_result/0, exec_result/0,
@@ -81,3 +86,52 @@
         supervisor:startchild_ret().
 start_pool(Id, Options) ->
   pg_sup:start_pool(Id, Options).
+
+-spec pool_stats(pool_id()) -> pg_pool:stats().
+pool_stats(PoolId) ->
+  pg_pool:stats(pg_pool:process_name(PoolId)).
+
+-spec acquire(pool_id()) -> {ok, pg_client:ref()} | {error, term()}.
+acquire(PoolId) ->
+  pg_pool:acquire(pg_pool:process_name(PoolId)).
+
+-spec release(pool_id(), pg_client:ref()) -> ok.
+release(PoolId, Client) ->
+  pg_pool:release(pg_pool:process_name(PoolId), Client).
+
+-spec with_client(pool_id(), pg_pool:client_fun()) -> term() | {error, term()}.
+with_client(PoolId, Fun) ->
+  pg_pool:with_client(pg_pool:process_name(PoolId), Fun).
+
+-spec with_transaction(pool_id(), pg_pool:client_fun()) ->
+        term() | {error, term()}.
+with_transaction(PoolId, Fun) ->
+  pg_pool:with_transaction(pg_pool:process_name(PoolId), Fun).
+
+-spec exec(pg_client:ref(), Query :: unicode:chardata()) -> exec_result().
+exec(Ref, Query)  ->
+  pg_client:exec(Ref, Query, [], #{}).
+
+-spec exec(pg_client:ref(), Query :: unicode:chardata(), Params :: [term()]) ->
+        exec_result().
+exec(Ref, Query, Params) ->
+  pg_client:exec(Ref, Query, Params, #{}).
+
+-spec exec(pg_client:ref(), Query :: unicode:chardata(), Params :: [term()],
+           query_options()) -> exec_result().
+exec(Ref, Query, Params, Options) ->
+  pg_client:exec(Ref, Query, Params, Options).
+
+-spec query(pg_client:ref(), Query :: unicode:chardata()) -> query_result().
+query(Ref, Query) ->
+  pg_client:query(Ref, Query, [], #{}).
+
+-spec query(pg_client:ref(), Query :: unicode:chardata(), Params :: [term()]) ->
+        query_result().
+query(Ref, Query, Params) ->
+  pg_client:query(Ref, Query, Params, #{}).
+
+-spec query(pg_client:ref(), Query :: unicode:chardata(), Params :: [term()],
+            query_options()) -> query_result().
+query(Ref, Query, Params, Options) ->
+  pg_client:query(Ref, Query, Params, Options).

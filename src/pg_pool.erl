@@ -23,7 +23,6 @@
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
--export_type([options/0, pool_name/0, pool_ref/0, client_fun/0]).
 -export_type([options/0, pool_name/0, pool_ref/0, client_fun/0,
               stats/0]).
 
@@ -98,8 +97,7 @@ with_client(PoolRef, Fun) ->
       {error, Reason}
   end.
 
--spec with_transaction(pool_ref(), client_fun()) ->
-        term() | {error, term()}.
+-spec with_transaction(pool_ref(), client_fun()) -> term() | {error, term()}.
 with_transaction(PoolRef, Fun) ->
   with_transaction(PoolRef, Fun, <<"">>).
 
@@ -107,7 +105,7 @@ with_transaction(PoolRef, Fun) ->
         term() | {error, term()}.
 with_transaction(PoolRef, Fun, BeginOpts) ->
   SendQuery = fun (Client, Query, ErrType) ->
-                  case pg_client:query(Client, Query) of
+                  case pg:query(Client, Query) of
                     {ok, _, _, _} ->
                       ok;
                     {error, Reason} ->

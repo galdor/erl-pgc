@@ -25,20 +25,20 @@ client_test_() ->
 
 column_names_as_atom(C) ->
   [?_assertEqual({ok, [<<"name">>, <<"score">>], [[<<"bob">>, 42]], 1},
-                 pg_client:query(C, "SELECT 'bob' AS name, 42 AS score")),
+                 pg:query(C, "SELECT 'bob' AS name, 42 AS score")),
    ?_assertEqual({ok, [name, score], [[<<"bob">>, 42]], 1},
-                 pg_client:query(C, "SELECT 'bob' AS name, 42 AS score", [],
-                                 #{column_names_as_atoms => true}))].
+                 pg:query(C, "SELECT 'bob' AS name, 42 AS score", [],
+                          #{column_names_as_atoms => true}))].
 
 rows_as_hashes(C) ->
   [?_assertEqual({ok, [n], [[1], [2], [3]], 3},
-                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
+                 pg:query(C, "SELECT generate_series(1, 3) AS n", [],
                                  #{column_names_as_atoms => true})),
    ?_assertEqual({ok, [<<"n">>], [#{<<"n">> => 1}, #{<<"n">> => 2},
                                   #{<<"n">> => 3}], 3},
-                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
-                                 #{rows_as_hashes => true})),
+                 pg:query(C, "SELECT generate_series(1, 3) AS n", [],
+                          #{rows_as_hashes => true})),
    ?_assertEqual({ok, [n], [#{n => 1}, #{n => 2}, #{n => 3}], 3},
-                 pg_client:query(C, "SELECT generate_series(1, 3) AS n", [],
-                                 #{column_names_as_atoms => true,
-                                   rows_as_hashes => true}))].
+                 pg:query(C, "SELECT generate_series(1, 3) AS n", [],
+                          #{column_names_as_atoms => true,
+                            rows_as_hashes => true}))].
