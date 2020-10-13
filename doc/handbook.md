@@ -157,9 +157,10 @@ value, we do not implement it.
 
 ## Money type
 The `money` PostgreSQL type represents numbers with a fixed fractional
-precision. Infortunately, it relies on the system environment of the database
-(`LC_MONETARY`) making it. Additionally, Erlang does not have any data type to
-handle this kind of value, therefore we do not implement it.
+precision. Infortunately, its behaviour is affected by the system environment
+of the database (`LC_MONETARY`) making it unreliable. Additionally, Erlang
+does not have any data type to handle this kind of value, therefore we do not
+implement it.
 
 ## Dates
 While PostgreSQL supports BC dates, Erlang calendar functions do not. We
