@@ -37,7 +37,7 @@ init([]) ->
 
 -spec pool_child_specs() -> [supervisor:child_spec()].
 pool_child_specs() ->
-  PoolSpecs = application:get_env(pg, pools, []),
+  PoolSpecs = application:get_env(pg, pools, #{}),
   maps:fold(fun (Id, Options, Acc) ->
                 [pool_child_spec(Id, Options) | Acc]
             end,

@@ -1,6 +1,9 @@
 % erl-pg changelog
 
 # Next Version
+## Bugs
+- Fix the default value of pool specifications in the configuration of the
+  application.
 
 # 1.1.0
 ## Features
