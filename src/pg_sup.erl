@@ -43,7 +43,8 @@ pool_child_specs() ->
             end,
             [], PoolSpecs).
 
--spec pool_child_spec(pg:pool_id(), pg_pool:options()) -> supervisor:child_spec().
+-spec pool_child_spec(pg:pool_id(), pg_pool:options()) ->
+        supervisor:child_spec().
 pool_child_spec(ChildId, Options) ->
   Name = pg_pool:process_name(ChildId),
   #{id => ChildId,
