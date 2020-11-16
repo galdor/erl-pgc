@@ -24,9 +24,8 @@
 
 -export_type([name/0, ref/0, options/0]).
 
--type name() :: {local, term()} | {global, term()} | {via, atom(), term()}.
--type ref() :: term() | {term(), atom()} | {global, term()}
-             | {via, atom(), term()} | pid().
+-type name() :: et_gen_server:name().
+-type ref() :: et_gen_server:ref().
 
 -type options() :: #{host => inet:hostname() | inet:ip_address(),
                      port => inet:port_number(),

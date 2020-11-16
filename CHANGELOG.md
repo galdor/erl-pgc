@@ -4,6 +4,9 @@
 ## Bugs
 - Fix the default value of pool specifications in the configuration of the
   application.
+## Misc
+- Rename `pg_pool:pool_name/0` into `pg_pool:name/0` and `pg_pool:pool_ref/0`
+  into `pg_pool:ref/0`.
 
 # 1.1.0
 ## Features

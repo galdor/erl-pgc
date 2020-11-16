@@ -20,7 +20,8 @@
   {applications,
    [kernel,
     stdlib,
-    ssl]},
+    ssl,
+    et]},
   {env, []},
   {modules, []},
 

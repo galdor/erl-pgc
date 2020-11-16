@@ -23,16 +23,14 @@
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
--export_type([options/0, pool_name/0, pool_ref/0, client_fun/0,
-              stats/0]).
+-export_type([options/0, name/0, ref/0, client_fun/0, stats/0]).
 
 -type options() :: #{client_options => pg_client:options(),
                      max_nb_clients => pos_integer(),
                      request_timeout => pos_integer()}.
 
--type pool_name() :: {local, term()} | {global, term()} | {via, atom(), term()}.
--type pool_ref() :: term() | {term(), atom()} | {global, term()}
-                  | {via, atom(), term()} | pid().
+-type name() :: et_gen_server:name().
+-type ref() :: et_gen_server:ref().
 
 -type client_fun() :: fun((pg_client:ref()) ->
                              ok | {ok, term()} | {error, term()}).
@@ -56,35 +54,35 @@ process_name(Id) ->
   Name = <<"pg_pool_", (atom_to_binary(Id))/binary>>,
   binary_to_atom(Name).
 
--spec start_link(pool_name() | options()) -> Result when
+-spec start_link(name() | options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link(Options) when is_map(Options) ->
   gen_server:start_link(?MODULE, [Options], []);
 start_link(Name) ->
   start_link(Name, #{}).
 
--spec start_link(pool_name(), options()) -> Result when
+-spec start_link(name(), options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link(Name, Options) ->
   gen_server:start_link(Name, ?MODULE, [Options], []).
 
--spec stop(pool_ref()) -> ok.
+-spec stop(ref()) -> ok.
 stop(PoolRef) ->
   gen_server:stop(PoolRef).
 
--spec stats(pool_ref()) -> stats().
+-spec stats(ref()) -> stats().
 stats(PoolRef) ->
   gen_server:call(PoolRef, stats, infinity).
 
--spec acquire(pool_ref()) -> {ok, pg_client:ref()} | {error, term()}.
+-spec acquire(ref()) -> {ok, pg_client:ref()} | {error, term()}.
 acquire(PoolRef) ->
   gen_server:call(PoolRef, acquire, infinity).
 
--spec release(pool_ref(), pg_client:ref()) -> ok.
+-spec release(ref(), pg_client:ref()) -> ok.
 release(PoolRef, Client) ->
   gen_server:call(PoolRef, {release, Client}, infinity).
 
--spec with_client(pool_ref(), client_fun()) -> term() | {error, term()}.
+-spec with_client(ref(), client_fun()) -> term() | {error, term()}.
 with_client(PoolRef, Fun) ->
   case acquire(PoolRef) of
     {ok, Client} ->
@@ -97,11 +95,11 @@ with_client(PoolRef, Fun) ->
       {error, Reason}
   end.
 
--spec with_transaction(pool_ref(), client_fun()) -> term() | {error, term()}.
+-spec with_transaction(ref(), client_fun()) -> term() | {error, term()}.
 with_transaction(PoolRef, Fun) ->
   with_transaction(PoolRef, Fun, <<"">>).
 
--spec with_transaction(pool_ref(), client_fun(), BeginOpts :: iodata()) ->
+-spec with_transaction(ref(), client_fun(), BeginOpts :: iodata()) ->
         term() | {error, term()}.
 with_transaction(PoolRef, Fun, BeginOpts) ->
   SendQuery = fun (Client, Query, ErrType) ->

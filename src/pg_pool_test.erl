@@ -250,7 +250,7 @@ stress() ->
                 end, Processes),
   pg_pool:stop(Pool).
 
--spec test_pool(pg_pool:options()) -> pg_pool:pool_ref().
+-spec test_pool(pg_pool:options()) -> pg_pool:ref().
 test_pool(ExtraOptions0) ->
   ExtraClientOptions = maps:get(client_options, ExtraOptions0, #{}),
   ClientOptions = maps:merge(pg_test:client_options(), ExtraClientOptions),
