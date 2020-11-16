@@ -12,14 +12,14 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_client_test).
+-module(pg_client_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
 client_test_() ->
   {foreach,
-   fun pg_test:start_client/0,
-   fun pg_test:stop_client/1,
+   fun pg_tests:start_client/0,
+   fun pg_tests:stop_client/1,
    [fun column_names_as_atom/1,
     fun rows_as_hashes/1]}.
 

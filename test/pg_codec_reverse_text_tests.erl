@@ -12,7 +12,7 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_codec_reverse_text_test).
+-module(pg_codec_reverse_text_tests).
 
 -behaviour(pg_codec).
 

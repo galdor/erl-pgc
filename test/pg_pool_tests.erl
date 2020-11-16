@@ -12,7 +12,7 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_pool_test).
+-module(pg_pool_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -253,7 +253,7 @@ stress() ->
 -spec test_pool(pg_pool:options()) -> pg_pool:ref().
 test_pool(ExtraOptions0) ->
   ExtraClientOptions = maps:get(client_options, ExtraOptions0, #{}),
-  ClientOptions = maps:merge(pg_test:client_options(), ExtraClientOptions),
+  ClientOptions = maps:merge(pg_tests:client_options(), ExtraClientOptions),
   ExtraOptions = ExtraOptions0#{client_options => ClientOptions},
   Options = maps:merge(#{client_options => ClientOptions,
                          max_nb_clients => 10,

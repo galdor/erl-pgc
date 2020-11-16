@@ -12,7 +12,7 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_test).
+-module(pg_tests).
 
 -export([client_options/0,
          start_client/0, start_client/1, stop_client/1]).

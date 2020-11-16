@@ -12,14 +12,14 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_types_test).
+-module(pg_types_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
 types_test_() ->
   {foreach,
-   fun pg_test:start_client/0,
-   fun pg_test:stop_client/1,
+   fun pg_tests:start_client/0,
+   fun pg_tests:stop_client/1,
    [fun type_boolean/1,
     fun type_bytea/1,
     fun type_char/1,
@@ -486,11 +486,11 @@ type_null(C) ->
 custom_types_test_() ->
   {setup,
    fun () ->
-       ReverseTextCodec = {pg_codec_reverse_text_test, []},
+       ReverseTextCodec = {pg_codec_reverse_text_tests, []},
        Types = [{text, 25, ReverseTextCodec}],
-       pg_test:start_client(#{types => Types})
+       pg_tests:start_client(#{types => Types})
    end,
-   fun pg_test:stop_client/1,
+   fun pg_tests:stop_client/1,
    fun (C) ->
        [?_assertEqual([<<"">>, <<"olleh">>, <<"dlrow">>],
                       query_row(C, "SELECT '', 'hello', 'world'"))]

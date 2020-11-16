@@ -12,7 +12,7 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pg_codec_array_test).
+-module(pg_codec_array_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
