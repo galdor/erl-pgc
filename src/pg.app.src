@@ -14,7 +14,7 @@
 
 {application, pg,
  [{description, "A PostgreSQL client."},
-  {vsn, "1.1.0"},
+  {vsn, "git"},
   {registered, []},
   {mod, {pg_app, []}},
   {applications,
