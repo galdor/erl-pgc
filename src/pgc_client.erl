@@ -27,7 +27,7 @@
 -type name() :: et_gen_server:name().
 -type ref() :: et_gen_server:ref().
 
--type options() :: #{host => inet:hostname() | inet:ip_address(),
+-type options() :: #{host => unicode:chardata(),
                      port => inet:port_number(),
                      tcp_options => [gen_tcp:connect_option()],
                      tls => boolean(),
@@ -157,7 +157,8 @@ handle_info(Msg, State) ->
 
 -spec connect(state()) -> {ok, state()} | {error, term()}.
 connect(State = #{options := Options}) ->
-  Host = maps:get(host, Options, "localhost"),
+  Host0 = maps:get(host, Options, "localhost"),
+  Host = unicode:characters_to_list(Host0),
   Port = maps:get(port, Options, 5432),
   TCPOptions = maps:get(tcp_options, Options, []),
   ?LOG_INFO("connecting to ~s:~b", [Host, Port]),

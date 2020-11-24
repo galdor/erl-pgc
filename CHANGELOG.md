@@ -3,6 +3,9 @@
 # Next Version
 ## Features
 - Annotate connection errors as `{connect, Reason}`.
+## Misc
+- Use host strings (or binaries) for client connection addresses instead of
+  inet values.
 
 # 1.2.0
 The big change with this new version is the renaming from `pg` to `pgc`, to
