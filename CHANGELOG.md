@@ -6,6 +6,9 @@
 ## Misc
 - Use host strings (or binaries) for client connection addresses instead of
   inet values.
+- The `pgc_pool:start_link/2` function now accepts a pool identifier and not a
+  process name.
+- Remove `pgc_pool:start_link/1`.
 
 # 1.2.0
 The big change with this new version is the renaming from `pg` to `pgc`, to

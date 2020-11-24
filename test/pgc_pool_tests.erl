@@ -259,7 +259,7 @@ test_pool(ExtraOptions0) ->
                          max_nb_clients => 10,
                          request_timeout => 1000},
                        ExtraOptions),
-  {ok, Pool} = pgc_pool:start_link({local, pgc_pool_test}, Options),
+  {ok, Pool} = pgc_pool:start_link(test, Options),
   Pool.
 
 -spec close_client(pgc_client:ref()) -> ok.

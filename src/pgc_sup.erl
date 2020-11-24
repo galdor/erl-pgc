@@ -45,7 +45,6 @@ pool_child_specs() ->
 
 -spec pool_child_spec(pgc:pool_id(), pgc_pool:options()) ->
         supervisor:child_spec().
-pool_child_spec(ChildId, Options) ->
-  Name = pgc_pool:process_name(ChildId),
-  #{id => ChildId,
-    start => {pgc_pool, start_link, [{local, Name}, Options]}}.
+pool_child_spec(Id, Options) ->
+  #{id => Id,
+    start => {pgc_pool, start_link, [Id, Options]}}.

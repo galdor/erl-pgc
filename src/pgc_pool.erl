@@ -18,7 +18,7 @@
 
 -behaviour(gen_server).
 
--export([process_name/1, start_link/1, start_link/2, stop/1,
+-export([process_name/1, start_link/2, stop/1,
          stats/1, acquire/1, release/2,
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
@@ -54,17 +54,11 @@ process_name(Id) ->
   Name = <<"pgc_pool_", (atom_to_binary(Id))/binary>>,
   binary_to_atom(Name).
 
--spec start_link(name() | options()) -> Result when
+-spec start_link(pgc:pool_id(), options()) -> Result when
     Result :: {ok, pid()} | ignore | {error, term()}.
-start_link(Options) when is_map(Options) ->
-  gen_server:start_link(?MODULE, [Options], []);
-start_link(Name) ->
-  start_link(Name, #{}).
-
--spec start_link(name(), options()) -> Result when
-    Result :: {ok, pid()} | ignore | {error, term()}.
-start_link(Name, Options) ->
-  gen_server:start_link(Name, ?MODULE, [Options], []).
+start_link(Id, Options) ->
+  Name = process_name(Id),
+  gen_server:start_link({local, Name}, ?MODULE, [Options], []).
 
 -spec stop(ref()) -> ok.
 stop(PoolRef) ->
