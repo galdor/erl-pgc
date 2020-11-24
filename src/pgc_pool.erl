@@ -41,7 +41,8 @@
                    nb_busy_clients := non_neg_integer(),
                    nb_requests := non_neg_integer()}.
 
--type state() :: #{options := options(),
+-type state() :: #{id := pgc:pool_id(),
+                   options := options(),
                    free_clients := [pgc_client:ref()],
                    busy_clients := [pgc_client:ref()],
                    requests := queue:queue(request()),
@@ -58,7 +59,7 @@ process_name(Id) ->
     Result :: {ok, pid()} | ignore | {error, term()}.
 start_link(Id, Options) ->
   Name = process_name(Id),
-  gen_server:start_link({local, Name}, ?MODULE, [Options], []).
+  gen_server:start_link({local, Name}, ?MODULE, [Id, Options], []).
 
 -spec stop(ref()) -> ok.
 stop(PoolRef) ->
@@ -138,10 +139,11 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
          end,
   with_client(PoolRef, Fun2).
 
-init([Options]) ->
-  logger:update_process_metadata(#{domain => [pgc, pool]}),
+init([Id, Options]) ->
+  logger:update_process_metadata(#{domain => [pgc, pool, Id]}),
   process_flag(trap_exit, true),
-  State = #{options => Options,
+  State = #{id => Id,
+            options => Options,
             free_clients => [],
             busy_clients => [],
             requests => queue:new()},

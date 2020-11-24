@@ -3,6 +3,7 @@
 # Next Version
 ## Features
 - Annotate connection errors as `{connect, Reason}`.
+- Include the pool id in the log domain.
 ## Misc
 - Use host strings (or binaries) for client connection addresses instead of
   inet values.
