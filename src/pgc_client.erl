@@ -169,7 +169,7 @@ connect(State = #{options := Options}) ->
       {ok, State2};
     {error, Reason} ->
       ?LOG_ERROR("connection failed: ~p", [Reason]),
-      {error, Reason}
+      {error, {connect, Reason}}
   end.
 
 -spec maybe_tls_connect(state()) -> {ok, state()} | {error, term()}.
@@ -194,7 +194,7 @@ tls_connect(State = #{options := Options, socket := Socket}) ->
           {ok, State#{ssl_socket => SSLSocket}};
         {error, Reason} ->
           ?LOG_ERROR("tls connection failed: ~p", [Reason]),
-          {error, Reason}
+          {error, {connect, Reason}}
       end;
     {ok, <<"N">>} ->
       ?LOG_ERROR("server does not support tls connections"),
