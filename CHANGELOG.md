@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+
+# 1.2.0
 The big change with this new version is the renaming from `pg` to `pgc`, to
 avoid conflict with a new module named `pg` introduced in Erlang 23.
 
