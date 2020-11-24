@@ -1,0 +1,32 @@
+%% Copyright (c) 2020 Nicolas Martyanoff <khaelin@gmail.com>.
+%%
+%% Permission to use, copy, modify, and/or distribute this software for any
+%% purpose with or without fee is hereby granted, provided that the above
+%% copyright notice and this permission notice appear in all copies.
+%%
+%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+%% REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+%% AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+%% INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+%% LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+%% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+%% PERFORMANCE OF THIS SOFTWARE.
+
+-module(pgc_codec_circle).
+
+-behaviour(pgc_codec).
+
+-export([encode/4, decode/4]).
+
+-spec encode(pgc:circle(), pgc_types:type(), pgc_types:type_set(), []) -> iodata().
+encode({Center, Radius}, _, Types, []) ->
+  {CenterData, _} = pgc_types:encode_value({point, Center}, Types),
+  {RadiusData, _} = pgc_types:encode_value({float8, Radius}, Types),
+  [CenterData, RadiusData].
+
+-spec decode(binary(), pgc_types:type(), pgc_types:type_set(), []) -> pgc:circle().
+decode(<<CenterData:16/binary, RadiusData:8/binary>>, _, Types, []) ->
+  {pgc_types:decode_value(CenterData, point, Types),
+   pgc_types:decode_value(RadiusData, float8, Types)};
+decode(Data, _, _, []) ->
+  error({invalid_data, Data}).

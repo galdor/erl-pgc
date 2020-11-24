@@ -1,12 +1,18 @@
-% erl-pg changelog
+% erl-pgc changelog
 
 # Next Version
+The big change with this new version is the renaming from `pg` to `pgc`, to
+avoid conflict with a new module named `pg` introduced in Erlang 23.
+
+Infortunately, there is a single global module namespace, and there is no way
+to avoid or resolve conflicts in any way.
+
 ## Bugs
 - Fix the default value of pool specifications in the configuration of the
   application.
 ## Misc
-- Rename `pg_pool:pool_name/0` into `pg_pool:name/0` and `pg_pool:pool_ref/0`
-  into `pg_pool:ref/0`.
+- Rename `pg_pool:pool_name/0` into `pgc_pool:name/0` and `pg_pool:pool_ref/0`
+  into `pgc_pool:ref/0`.
 
 # 1.1.0
 ## Features

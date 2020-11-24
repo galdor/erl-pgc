@@ -1,7 +1,7 @@
-% erl-pg
+% erl-pgc
 
 # Introduction
-The erl-pg project is an Erlang client for the
+The erl-pgc project is an Erlang client for the
 [PostgreSQL](https://www.postgresql.org) database.
 
 # Client
@@ -12,22 +12,22 @@ The erl-pg project is an Erlang client for the
 
 # Pool
 ## Configuration
-Pools are created by `pg_sup` supervisor based on the configuration of the
-`pg` application. Pools are identified by an atom. Each pool process is
-registered as `pg_pool_<id>` where `<id>` is its identifier. For example, the
-process of the `example` pool is registered as `pg_pool_example`.
+Pools are created by `pgc_sup` supervisor based on the configuration of the
+`pgc` application. Pools are identified by an atom. Each pool process is
+registered as `pgc_pool_<id>` where `<id>` is its identifier. For example, the
+process of the `example` pool is registered as `pgc_pool_example`.
 
 The following example configures a pool named `example`:
 
 ```erlang
-[{pg,
+[{pgc,
   [{pools,
     #{example => #{client_options => #{user => "test",
                                        database => "test"}}}}]}].
 ```
 
-Pools can also be created with the `pg:start_pool/2` function; these pools
-are also handled by the `pg_sup` supervisor.
+Pools can also be created with the `pgc:start_pool/2` function; these pools
+are also handled by the `pgc_sup` supervisor.
 
 ## Pool options
 **TODO**
@@ -83,30 +83,30 @@ decoding. Custom types will override internal types defined in erl-pg.
 | `oid`           | `0..4294967295`                              | `42`                                                          |
 | `json`          | `binary()`                                   | `<<"[1,2,3]">>`                                               |
 | `xml`           | `binary()`                                   | `<<"<br />">>`                                                |
-| `point`         | `pg:point()`                                 | `{0.0,1.0}`                                                   |
-| `lseg`          | `pg:line_segment()`                          | `{{0.0,1.0}, {2.5,-1.5}}`                                     |
-| `path`          | `pg:path()`                                  | `{open, [{-1.0,1.5}, {0.0,0.3}, {2.1,-1.5}]}`                 |
-| `box`           | `pg:box()`                                   | `{{2.5,2.0}, {-2.5,-1.3}}`                                    |
-| `line`          | `pg:line()`                                  | `{2.0, -1.5, 3.1}`                                            |
-| `polygon`       | `pg:polygon()`                               | `[{-1.0,1.5}, {0.0,0.3}, {2.1,-1.5}]`                         |
-| `cidr`          | `pg:inet_address()`                          | `{{192,168,0,0}, 24}`                                         |
-| `float4`        | `pg:float_value()`                           | `3.14`                                                        |
-| `float8`        | `pg:float_value()`                           | `3.14`                                                        |
-| `macaddr8`      | `pg:macaddr()`                               | `{16#08, 16#00, 16#2b, 16#01, 16#02, 16#03, 16#04, 16#05}`    |
-| `circle`        | `pg:circle()`                                | `{{0.0,1.0}, 3.0}`                                            |
-| `macaddr`       | `pg:mac_address()`                           | `{16#08, 16#00, 16#2b, 16#01, 16#02, 16#03}`                  |
-| `inet`          | `pg:inet_address()`                          | `{{192,168,0,1}, 24}`                                         |
+| `point`         | `pgc:point()`                                | `{0.0,1.0}`                                                   |
+| `lseg`          | `pgc:line_segment()`                         | `{{0.0,1.0}, {2.5,-1.5}}`                                     |
+| `path`          | `pgc:path()`                                 | `{open, [{-1.0,1.5}, {0.0,0.3}, {2.1,-1.5}]}`                 |
+| `box`           | `pgc:box()`                                  | `{{2.5,2.0}, {-2.5,-1.3}}`                                    |
+| `line`          | `pgc:line()`                                 | `{2.0, -1.5, 3.1}`                                            |
+| `polygon`       | `pgc:polygon()`                              | `[{-1.0,1.5}, {0.0,0.3}, {2.1,-1.5}]`                         |
+| `cidr`          | `pgc:inet_address()`                         | `{{192,168,0,0}, 24}`                                         |
+| `float4`        | `pgc:float_value()`                          | `3.14`                                                        |
+| `float8`        | `pgc:float_value()`                          | `3.14`                                                        |
+| `macaddr8`      | `pgc:macaddr()`                              | `{16#08, 16#00, 16#2b, 16#01, 16#02, 16#03, 16#04, 16#05}`    |
+| `circle`        | `pgc:circle()`                               | `{{0.0,1.0}, 3.0}`                                            |
+| `macaddr`       | `pgc:mac_address()`                          | `{16#08, 16#00, 16#2b, 16#01, 16#02, 16#03}`                  |
+| `inet`          | `pgc:inet_address()`                         | `{{192,168,0,1}, 24}`                                         |
 | `bpchar`        | `binary()`                                   | `<<"été"/utf8>>`                                              |
 | `varchar`       | `binary()`                                   | `<<"été"/utf8>>`                                              |
-| `date`          | `pg:date()`                                  | `{2020, 03, 01}`                                              |
-| `time`          | `pg:time()`                                  | `{14, 10, 30, 3500}`                                          |
-| `timestamp`     | `pg:timestamp()`                             | `{{2020, 03, 01}, {14, 10, 30, 3500}}`                        |
-| `timestamptz`   | `pg:timestamp()`                             | `{{2020, 03, 01}, {14, 10, 30, 3500}}`                        |
-| `interval`      | `pg:interval()`                              | `{1, 5, 16200000000}`                                         |
-| `timetz`        | `pg:time_with_timezone()`                    | `{14, 10, 30, 0, 7200}`                                       |
+| `date`          | `pgc:date()`                                 | `{2020, 03, 01}`                                              |
+| `time`          | `pgc:time()`                                 | `{14, 10, 30, 3500}`                                          |
+| `timestamp`     | `pgc:timestamp()`                            | `{{2020, 03, 01}, {14, 10, 30, 3500}}`                        |
+| `timestamptz`   | `pgc:timestamp()`                            | `{{2020, 03, 01}, {14, 10, 30, 3500}}`                        |
+| `interval`      | `pgc:interval()`                             | `{1, 5, 16200000000}`                                         |
+| `timetz`        | `pgc:time_with_timezone()`                   | `{14, 10, 30, 0, 7200}`                                       |
 | `bit`           | `bitstring()`                                | `<<1:1,0:1,1:1>>`                                             |
 | `varbit`        | `bitstring()`                                | `<<1:1,0:1,1:1>>`                                             |
-| `uuid`          | `pg:uuid()`                                  | `<<3,172,86,36,126,103,79,211,178,40,23,231,189,76,180,179>>` |
+| `uuid`          | `pgc:uuid()`                                 | `<<3,172,86,36,126,103,79,211,178,40,23,231,189,76,180,179>>` |
 | `jsonb`         | `binary()`                                   | `<<"[1,2,3]">>`                                               |
 | `Type[]`        | `list()`                                     | `[1, 2, 3]`                                                   |
 
@@ -121,7 +121,7 @@ int4}`. Note that there is no such things as arrays of arrays.
 
 ## Floating point values
 Erlang does not support `NaN`, `+Infinity` and `-Infinity`. Therefore we
-introduce `pg:float_value()` which extends `float()` with `nan`,
+introduce `pgc:float_value()` which extends `float()` with `nan`,
 `positive_infinity` and `negative_infinity`. These values are supported for
 both decoding and encoding. We use a quiet NaN value.
 
