@@ -4,6 +4,8 @@
 ## Features
 - Annotate connection errors as `{connect, Reason}`.
 - Include the pool id in the log domain.
+## Bugs
+- Fix handling of query responses which do not contain any row.
 ## Misc
 - Use host strings (or binaries) for client connection addresses instead of
   inet values.

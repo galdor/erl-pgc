@@ -490,10 +490,10 @@ finalize_query_response(Response) ->
         pgc:query_result().
 query_response_to_query_result(#{error := Error}, _Types, _Options) ->
   {error, Error};
-query_response_to_query_result(#{columns := ResponseColumns,
-                                 rows := ResponseRows,
-                                 command_tag := CommandTag},
+query_response_to_query_result(Response = #{columns := ResponseColumns,
+                                            command_tag := CommandTag},
                                Types, Options) ->
+  ResponseRows = maps:get(rows, Response, []),
   NbAffectedRows = case CommandTag of
                      {_, Nb} -> Nb;
                      _ -> 0
