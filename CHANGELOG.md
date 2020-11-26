@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+
+# 1.3.0
 ## Features
 - Annotate connection errors as `{connect, Reason}`.
 - Include the pool id in the log domain.
