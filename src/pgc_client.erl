@@ -36,7 +36,8 @@
                      password => unicode:chardata(),
                      database => unicode:chardata(),
                      application_name => unicode:chardata(),
-                     types => pgc_types:type_set()}.
+                     types => pgc_types:type_set(),
+                     log_messages => boolean()}.
 
 -type state() :: #{options := options(),
                    socket => inet:socket(),
@@ -410,7 +411,7 @@ recv(Length, #{socket := Socket}) ->
   Data.
 
 -spec recv_msg(state()) -> pgc_proto:msg().
-recv_msg(State) ->
+recv_msg(State = #{options := Options}) ->
   Header = recv(5, State),
   <<Type:8/integer, Size:32/integer>> = Header,
   Payload = case Size - 4 of
@@ -418,7 +419,8 @@ recv_msg(State) ->
               N -> recv(N, State)
             end,
   Msg = pgc_proto:decode_msg(Type, Payload),
-  ?LOG_DEBUG("received message ~p", [Msg]),
+  maps:get(log_messages, Options, false) andalso
+    ?LOG_DEBUG("received message ~p", [Msg]),
   Msg.
 
 -spec log_backend_notice(pgc:notice()) -> ok.
