@@ -366,6 +366,8 @@ recv_extended_query_response(State, Response) ->
       recv_extended_query_response(State, Response);
     {parameter_status, _, _} ->
       recv_extended_query_response(State, Response);
+    empty_query_response ->
+      recv_extended_query_response(State, Response);
     parse_complete ->
       recv_extended_query_response(State, Response);
     bind_complete ->

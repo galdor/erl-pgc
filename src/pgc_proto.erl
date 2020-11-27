@@ -500,7 +500,10 @@ query_response_to_query_result(Response = #{columns := ResponseColumns,
       {ok, ColumnNames, DecodedRows, NbAffectedRows};
     {error, Reason} ->
       {error, Reason}
-  end.
+  end;
+query_response_to_query_result(_, _Types, _Options) ->
+  %% We can end up here when executing an empty statement
+  {ok, [], [], 0}.
 
 -spec query_response_to_exec_result(query_response()) -> pgc:exec_result().
 query_response_to_exec_result(#{error := Error}) ->
@@ -510,7 +513,10 @@ query_response_to_exec_result(#{command_tag := CommandTag}) ->
                      {_, Nb} -> Nb;
                      _ -> 0
                    end,
-  {ok, NbAffectedRows}.
+  {ok, NbAffectedRows};
+query_response_to_exec_result(_) ->
+  %% We can end up here when executing an empty statement
+  {ok, 0}.
 
 -spec decode_rows([row()], [pgc:oid()], pgc_types:type_set(),
                   [pgc:column_name()], pgc:query_options(), [pgc:row()]) ->

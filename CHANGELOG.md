@@ -11,6 +11,7 @@
   client. Default to false to avoid spamming as it was before.
 ## Bugs
 - Fix query failure logging in `pgc:with_transaction/2`.
+- Fix response handling for empty statements.
 ## Misc
 - Query functions now return type decoding errors instead of signalling them
   with `error/1`.
