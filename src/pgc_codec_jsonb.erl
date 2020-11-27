@@ -26,6 +26,6 @@ encode(Bin, _, _, []) ->
 decode(<<1:8, Bin/binary>>, _, _, []) ->
   Bin;
 decode(<<Version:8, _Bin/binary>>, _, _, []) ->
-  error({invalid_jsonb_version, Version});
+  throw({error, {invalid_jsonb_version, Version}});
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

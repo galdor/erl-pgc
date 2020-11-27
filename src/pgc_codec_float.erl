@@ -55,4 +55,4 @@ decode(<<0:1, 255:8, _:23>>, _, _, [4]) ->
 decode(<<F:32/float>>, _, _, [4]) ->
   F;
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

@@ -48,7 +48,7 @@ decode(<<MicrosecondOffset:64/signed-integer>>, _, _, []) ->
         calendar:gregorian_seconds_to_datetime(TotalSeconds),
       {Date, {Hours, Minutes, Seconds, Microseconds}};
     true ->
-      error({unsupported_bc_timestamp, MicrosecondOffset})
+      throw({error, {unsupported_bc_timestamp, MicrosecondOffset}})
   end;
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

@@ -29,4 +29,4 @@ decode(<<XData:8/binary, YData:8/binary>>, _, Types, []) ->
   {pgc_types:decode_value(XData, float8, Types),
    pgc_types:decode_value(YData, float8, Types)};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

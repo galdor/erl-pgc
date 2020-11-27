@@ -36,7 +36,7 @@ decode(<<3:8, NetMask:8, _:8, 16:8,
        _, _, []) ->
   {{A, B, C, D, E, F, G, H}, NetMask};
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).
 
 -spec cidr_flag(inet | cidr) -> 0..1.
 cidr_flag(inet) -> 0;

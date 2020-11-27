@@ -29,4 +29,4 @@ decode(<<CenterData:16/binary, RadiusData:8/binary>>, _, Types, []) ->
   {pgc_types:decode_value(CenterData, point, Types),
    pgc_types:decode_value(RadiusData, float8, Types)};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

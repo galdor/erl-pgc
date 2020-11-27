@@ -31,4 +31,4 @@ decode(<<AData:8/binary, BData:8/binary, CData:8/binary>>, _, Types, []) ->
    pgc_types:decode_value(BData, float8, Types),
    pgc_types:decode_value(CData, float8, Types)};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

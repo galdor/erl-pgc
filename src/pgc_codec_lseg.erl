@@ -31,4 +31,4 @@ decode(<<StartData:16/binary, EndData:16/binary>>, _, Types, []) ->
   {pgc_types:decode_value(StartData, point, Types),
    pgc_types:decode_value(EndData, point, Types)};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

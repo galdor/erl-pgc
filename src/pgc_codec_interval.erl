@@ -32,4 +32,4 @@ decode(<<Microseconds:64/signed-integer,
          Months:32/signed-integer>>, _, _, []) ->
   {Months, Days, Microseconds};
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

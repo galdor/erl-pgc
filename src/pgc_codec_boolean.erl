@@ -30,4 +30,4 @@ decode(<<0:8>>, _, _, []) ->
 decode(<<_:8>>, _, _, []) ->
   true;
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

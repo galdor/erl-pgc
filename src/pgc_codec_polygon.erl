@@ -37,4 +37,4 @@ decode(<<NbPoints:32, Data/binary>>, _, Types, []) ->
   {Points, _} = lists:mapfoldl(F, Data, lists:seq(1, NbPoints)),
   Points;
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

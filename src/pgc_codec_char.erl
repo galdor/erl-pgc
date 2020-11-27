@@ -26,4 +26,4 @@ encode(C, _, _, []) ->
 decode(<<C:8>>, _, _, []) ->
   C;
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

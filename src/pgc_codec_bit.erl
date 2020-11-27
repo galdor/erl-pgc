@@ -28,8 +28,8 @@ encode(Bin, _, _, []) ->
 -spec decode(binary(), pgc_types:type(), pgc_types:type_set(), []) -> bitstring().
 decode(<<NbBits:32, Data/binary>>, _, _, []) ->
   NbBytes = (NbBits + 7) div 8,
-  byte_size(Data) == NbBytes orelse error({invalid_data, Data}),
+  byte_size(Data) == NbBytes orelse throw({error, {invalid_data, Data}}),
   <<Bits:NbBits/binary-unit:1, _/binary-unit:1>> = Data,
   Bits;
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

@@ -316,7 +316,7 @@ recv_simple_query_response(State, Response) ->
         {ok, Error} ->
           {error, Error};
         error ->
-          {ok, pgc_proto:finalize_query_response(Response2)}
+          {ok, Response2}
       end;
     Msg ->
       {error, {unexpected_msg, Msg}}
@@ -378,7 +378,7 @@ recv_extended_query_response(State, Response) ->
         {ok, Error} ->
           {error, Error};
         error ->
-          {ok, pgc_proto:finalize_query_response(Response2)}
+          {ok, Response2}
       end;
     Msg ->
       {error, {unexpected_msg, Msg}}

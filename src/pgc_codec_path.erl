@@ -37,7 +37,7 @@ decode(<<TypeValue:8, NbPoints:32, Data/binary>>, _, Types, []) ->
   Type = case TypeValue of
            0 -> open;
            1 -> closed;
-           Value -> error({invalid_path_type, Value})
+           Value -> throw({error, {invalid_path_type, Value}})
          end,
   F = fun (_, <<PointData:16/binary, Rest/binary>>) ->
           Point = pgc_types:decode_value(PointData, point, Types),
@@ -46,4 +46,4 @@ decode(<<TypeValue:8, NbPoints:32, Data/binary>>, _, Types, []) ->
   {Points, _} = lists:mapfoldl(F, Data, lists:seq(1, NbPoints)),
   {Type, Points};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

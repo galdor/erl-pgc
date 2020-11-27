@@ -21,7 +21,7 @@
          encode_terminate_msg/0,
          decode_msg/2,
          query_response/0, add_query_response_row/2,
-         finalize_query_response/1, query_response_to_query_result/3]).
+         query_response_to_query_result/3]).
 
 -export_type([msg_type/0, msg/0, error_and_notice_fields/0, severity/0,
               query_response/0, transaction_status/0, command_tag/0,
@@ -479,12 +479,6 @@ add_query_response_row(Row, Response) ->
   Rows = maps:get(rows, Response, []),
   maps:put(rows, [Row | Rows], Response).
 
--spec finalize_query_response(query_response()) -> query_response().
-finalize_query_response(Response = #{rows := Rows}) ->
-  Response#{rows => lists:reverse(Rows)};
-finalize_query_response(Response) ->
-  Response.
-
 -spec query_response_to_query_result(query_response(), pgc_types:type_set(),
                                      pgc:query_options()) ->
         pgc:query_result().
@@ -493,7 +487,7 @@ query_response_to_query_result(#{error := Error}, _Types, _Options) ->
 query_response_to_query_result(Response = #{columns := ResponseColumns,
                                             command_tag := CommandTag},
                                Types, Options) ->
-  ResponseRows = maps:get(rows, Response, []),
+  Rows = maps:get(rows, Response, []),
   NbAffectedRows = case CommandTag of
                      {_, Nb} -> Nb;
                      _ -> 0
@@ -501,20 +495,40 @@ query_response_to_query_result(Response = #{columns := ResponseColumns,
   ColumnNamesAsAtoms = maps:get(column_names_as_atoms, Options, false),
   ColumnNames = [column_name(C, ColumnNamesAsAtoms) || C <- ResponseColumns],
   Oids = [Oid || #{type_oid := Oid} <- ResponseColumns],
-  Rows = lists:map(fun (Row) ->
-                       decode_row(Row, Oids, Types, ColumnNames, Options)
-                   end, ResponseRows),
-  {ok, ColumnNames, Rows, NbAffectedRows}.
+  case decode_rows(Rows, Oids, Types, ColumnNames, Options, []) of
+    {ok, DecodedRows} ->
+      {ok, ColumnNames, DecodedRows, NbAffectedRows};
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec decode_rows([row()], [pgc:oid()], pgc_types:type_set(),
+                  [pgc:column_name()], pgc:query_options(), [pgc:row()]) ->
+        {ok, [pgc:row()]} | {error, pgc:error_reason()}.
+decode_rows([], _, _, _, _, Acc) ->
+  {ok, lists:reverse(Acc)};
+decode_rows([Row | Rows], Oids, Types, ColumnNames, Options, Acc) ->
+  case decode_row(Row, Oids, Types, ColumnNames, Options) of
+    {ok, DecodedRow} ->
+      decode_rows(Rows, Oids, Types, ColumnNames, Options, [DecodedRow | Acc]);
+    {error, Reason} ->
+      {error, Reason}
+  end.
 
 -spec decode_row(row(), [pgc:oid()], pgc_types:type_set(), [pgc:column_name()],
-                 pgc:query_options()) -> pgc:row().
+                 pgc:query_options()) ->
+        {ok, pgc:row()} | {error, pgc:error_reason()}.
 decode_row(Row, Oids, Types, ColumnNames, Options) ->
-  Values = pgc_types:decode_values(Row, Oids, Types),
-  case maps:get(rows_as_hashes, Options, false) of
-    true ->
-      maps:from_list(lists:zip(ColumnNames, Values));
-    false ->
-      Values
+  case pgc_types:decode_values(Row, Oids, Types) of
+    {ok, Values} ->
+      case maps:get(rows_as_hashes, Options, false) of
+        true ->
+          {ok, maps:from_list(lists:zip(ColumnNames, Values))};
+        false ->
+          {ok, Values}
+      end;
+    {error, Reason} ->
+      {error, Reason}
   end.
 
 -spec column_name(column(), AsAtom :: boolean()) -> pgc:column_name().

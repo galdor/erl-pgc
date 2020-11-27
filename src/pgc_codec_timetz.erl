@@ -39,4 +39,4 @@ decode(<<TotalMicroseconds:64/signed-integer, Offset:32/signed-integer>>,
   Microseconds = US2 rem 1_000_000,
   {Hours, Minutes, Seconds, Microseconds, -Offset};
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

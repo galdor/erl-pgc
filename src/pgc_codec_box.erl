@@ -29,4 +29,4 @@ decode(<<UpperRightData:16/binary, LowerLeftData:16/binary>>, _, Types, []) ->
   {pgc_types:decode_value(UpperRightData, point, Types),
    pgc_types:decode_value(LowerLeftData, point, Types)};
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

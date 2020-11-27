@@ -40,7 +40,7 @@ decode(<<DayOffset:32/signed-integer>>, _, _, []) ->
     Days >= 0 ->
       calendar:gregorian_days_to_date(Days);
     true ->
-      error({unsupported_bc_date, DayOffset})
+      throw({error, {unsupported_bc_date, DayOffset}})
   end;
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

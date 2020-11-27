@@ -21,7 +21,7 @@
 
 -spec encode(list(), pgc_types:type(), pgc_types:type_set(), list()) -> iodata().
 encode(_, _, _, [ValueTypeName = {array, _}]) ->
-  error({invalid_value_type, ValueTypeName});
+  throw({error, {invalid_value_type, ValueTypeName}});
 encode(Array, _, Types, [ValueTypeName]) ->
   Lengths = array_dimension_lengths(Array),
   NbDimensions = length(Lengths),
@@ -49,7 +49,7 @@ decode(<<NbDimensions:32, _Flags:32, _ValueTypeOid:32, Data/binary>>,
   {Content, _} = decode_dimension(ContentData, Lengths, Decode),
   Content;
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).
 
 -spec array_contains_null(list()) -> boolean().
 array_contains_null([]) ->

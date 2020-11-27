@@ -28,4 +28,4 @@ encode(I, _, _, []) ->
 decode(<<I:32>>, _, _, []) ->
   I;
 decode(Data, _, _, []) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

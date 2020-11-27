@@ -36,4 +36,4 @@ decode(<<I:32/signed-integer>>, _, _, [4]) ->
 decode(<<I:16/signed-integer>>, _, _, [2]) ->
   I;
 decode(Data, _, _, [_]) ->
-  error({invalid_data, Data}).
+  throw({error, {invalid_data, Data}}).

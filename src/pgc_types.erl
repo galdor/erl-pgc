@@ -76,11 +76,18 @@ encode_value({TypeName, V}, Types) ->
 encode_value(V, _Types) ->
   error({unencodable_value, V}).
 
--spec decode_values(pgc_proto:row(), [pgc:oid()], type_set()) -> list().
-decode_values(ValueData, Oids, Types) ->
-  lists:zipwith(fun (Data, Oid) ->
-                    decode_value(Data, Oid, Types)
-                end, ValueData, Oids).
+-spec decode_values(pgc_proto:row(), [pgc:oid()], type_set()) ->
+        {ok, list()} | {error, pgc:error_reason()}.
+decode_values(Values, Oids, Types) ->
+  try
+    DecodedValues = lists:zipwith(fun (Value, Oid) ->
+                                      decode_value(Value, Oid, Types)
+                                  end, Values, Oids),
+    {ok, DecodedValues}
+  catch
+    throw:{error, Reason} ->
+      {error, Reason}
+  end.
 
 -spec decode_value(pgc_proto:row_field(), TypeRef, type_set()) -> term() when
     TypeRef :: type_name() | pgc:oid().
@@ -97,7 +104,7 @@ decode_value(Data, NameOrOid, Types) ->
     {_, _, {Module, Args}} = Type ->
       Module:decode(Data, Type, Types, Args);
     unknown_type ->
-      error({unknown_type, NameOrOid})
+      throw({error, {unknown_type, NameOrOid}})
   end.
 
 -spec find_type_by_name(type_name(), type_set()) -> type() | unknown_type.

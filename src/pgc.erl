@@ -23,6 +23,7 @@
 
 -export_type([pool_id/0,
               error/0, notice/0,
+              error_reason/0,
               query_options/0, query_result/0, exec_result/0,
               column_name/0, row/0,
               oid/0, float_value/0,
@@ -38,6 +39,8 @@
 -type error() :: pgc_proto:error_and_notice_fields().
 -type notice() :: pgc_proto:error_and_notice_fields().
 
+-type error_reason() :: error() | {unknown_type, oid()}.
+
 -type query_options() :: #{column_names_as_atoms => boolean(),
                            rows_as_hashes => boolean()}.
 
@@ -45,10 +48,11 @@
                          [column_name()],
                          [row()],
                          NbAffectedRows :: non_neg_integer()}
-                      | {error, error()}.
+                      | {error, error_reason()}.
+
 -type exec_result() :: {ok,
                         NbAffectedRows :: non_neg_integer()}
-                     | {error, error()}.
+                     | {error, error_reason()}.
 
 -type column_name() :: binary() | atom().
 
