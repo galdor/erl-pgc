@@ -6,6 +6,7 @@
   the `pgc_proto:error_and_notice_fields()` type.
 - Add support for the `void` pseudo-type.
 - Add `pgc:simple_exec/2`.
+- Add functions to manipulate timestamp and time values.
 ## Misc
 - Query functions now return type decoding errors instead of signalling them
   with `error/1`.
