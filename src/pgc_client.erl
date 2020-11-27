@@ -412,14 +412,14 @@ recv_msg(State) ->
   ?LOG_DEBUG("received message ~p", [Msg]),
   Msg.
 
--spec log_backend_notice(pgc_proto:error_and_notice_fields()) -> ok.
-log_backend_notice(Fields) ->
-  #{code := Code, message := Message} = Fields,
+-spec log_backend_notice(pgc:notice()) -> ok.
+log_backend_notice(Notice) ->
+  #{code := Code, message := Message} = Notice,
   ?LOG_NOTICE("backend notice ~s: ~s", [Code, Message]),
   ok.
 
--spec log_backend_error(pgc_proto:error_and_notice_fields()) -> ok.
-log_backend_error(Fields) ->
-  #{code := Code, message := Message} = Fields,
+-spec log_backend_error(pgc:error()) -> ok.
+log_backend_error(Error) ->
+  #{code := Code, message := Message} = Error,
   ?LOG_ERROR("backend error ~s: ~s", [Code, Message]),
   ok.
