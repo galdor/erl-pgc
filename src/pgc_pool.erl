@@ -107,7 +107,7 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
                       ?LOG_ERROR("request ~w failed: ~p~n",
                                  [QueryString, Reason]),
                       pgc_client:stop(Client),
-                      error({ErrType, Reason})
+                      throw({error, {ErrType, Reason}})
                   end
               end,
   Fun2 = fun (Client) ->
@@ -123,7 +123,7 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
                Result ->
                  Result
              catch
-               error:{Type, Reason} when
+               throw:{error, {Type, Reason}} when
                    Type =:= commit_failure; Type =:= rollback_failure ->
                  {error, {Type, Reason}};
                Type:Reason:Stack ->
