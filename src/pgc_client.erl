@@ -324,7 +324,7 @@ recv_simple_query_response(State, Response) ->
 
 -spec send_extended_query(Query :: iodata(), Params :: [term()],
                           pgc:query_options(), state()) ->
-        {ok, pgc:query_result()} | {error, term()}.
+        pgc:query_result().
 send_extended_query(Query, Params, QueryOptions, State) ->
   #{options := Options} = State,
   Types = maps:get(types, Options, pgc_types:empty_type_set()),
