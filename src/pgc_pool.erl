@@ -104,7 +104,7 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
                     {error, Reason} ->
                       %% BEGIN/COMMIT/ROLLBACK failing is a big deal.
                       QueryString = binary_to_list(iolist_to_binary(Query)),
-                      ?LOG_ERROR("request ~w failed: ~p~n",
+                      ?LOG_ERROR("request ~0tp failed: ~p~n",
                                  [QueryString, Reason]),
                       pgc_client:stop(Client),
                       throw({error, {ErrType, Reason}})
