@@ -21,7 +21,7 @@
          encode_terminate_msg/0,
          decode_msg/2,
          query_response/0, add_query_response_row/2,
-         query_response_to_query_result/3]).
+         query_response_to_query_result/3, query_response_to_exec_result/1]).
 
 -export_type([msg_type/0, msg/0, error_and_notice_fields/0, severity/0,
               query_response/0, transaction_status/0, command_tag/0,
@@ -501,6 +501,16 @@ query_response_to_query_result(Response = #{columns := ResponseColumns,
     {error, Reason} ->
       {error, Reason}
   end.
+
+-spec query_response_to_exec_result(query_response()) -> pgc:exec_result().
+query_response_to_exec_result(#{error := Error}) ->
+  {error, Error};
+query_response_to_exec_result(#{command_tag := CommandTag}) ->
+  NbAffectedRows = case CommandTag of
+                     {_, Nb} -> Nb;
+                     _ -> 0
+                   end,
+  {ok, NbAffectedRows}.
 
 -spec decode_rows([row()], [pgc:oid()], pgc_types:type_set(),
                   [pgc:column_name()], pgc:query_options(), [pgc:row()]) ->

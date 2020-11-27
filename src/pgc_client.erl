@@ -19,7 +19,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0, start_link/1, start_link/2, stop/1,
-         exec/2, exec/3, exec/4, query/2, query/3, query/4]).
+         simple_exec/2, exec/2, exec/3, exec/4, query/2, query/3, query/4]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
 -export_type([name/0, ref/0, options/0]).
@@ -68,6 +68,11 @@ start_link(Name, Options) ->
 -spec stop(ref()) -> ok.
 stop(Ref) ->
   gen_server:stop(Ref).
+
+-spec simple_exec(ref(), Query :: unicode:chardata()) -> pgc:exec_result().
+simple_exec(Ref, Query)  ->
+  Msg = {simple_query, Query},
+  gen_server:call(Ref, Msg, infinity).
 
 -spec exec(ref(), Query :: unicode:chardata()) -> pgc:exec_result().
 exec(Ref, Query)  ->
@@ -276,11 +281,15 @@ finish_startup(State) ->
       {error, {unexpected_msg, Msg}}
   end.
 
--spec send_simple_query(Query :: iodata(), state()) ->
-        {ok, pgc_proto:query_response()} | {error, term()}.
+-spec send_simple_query(Query :: iodata(), state()) -> pgc:exec_result().
 send_simple_query(Query, State) ->
   send(pgc_proto:encode_query_msg(Query), State),
-  recv_simple_query_response(State, pgc_proto:query_response()).
+  case recv_simple_query_response(State, pgc_proto:query_response()) of
+    {ok, Response} ->
+      pgc_proto:query_response_to_exec_result(Response);
+    {error, Reason} ->
+      {error, Reason}
+  end.
 
 -spec recv_simple_query_response(state(), pgc_proto:query_response()) ->
         {ok, Response :: map()} | {error, term()}.

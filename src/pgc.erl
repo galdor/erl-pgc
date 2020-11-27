@@ -18,7 +18,7 @@
          pool_stats/1,
          acquire/1, release/2,
          with_client/2, with_transaction/2,
-         exec/2, exec/3, exec/4,
+         simple_exec/2, exec/2, exec/3, exec/4,
          query/2, query/3, query/4]).
 
 -export_type([pool_id/0,
@@ -113,6 +113,11 @@ with_client(PoolId, Fun) ->
         term() | {error, term()}.
 with_transaction(PoolId, Fun) ->
   pgc_pool:with_transaction(pgc_pool:process_name(PoolId), Fun).
+
+-spec simple_exec(pgc_client:ref(), Query :: unicode:chardata()) ->
+        exec_result().
+simple_exec(Ref, Query)  ->
+  pgc_client:simple_exec(Ref, Query).
 
 -spec exec(pgc_client:ref(), Query :: unicode:chardata()) -> exec_result().
 exec(Ref, Query)  ->

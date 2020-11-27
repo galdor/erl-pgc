@@ -5,6 +5,7 @@
 - Introduce the `pgc:error/0` and `pgc:notice/0` type to avoid manipulating
   the `pgc_proto:error_and_notice_fields()` type.
 - Add support for the `void` pseudo-type.
+- Add `pgc:simple_exec/2`.
 ## Misc
 - Query functions now return type decoding errors instead of signalling them
   with `error/1`.
