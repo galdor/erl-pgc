@@ -44,6 +44,8 @@ encode_values(Values, Types) ->
 -spec encode_value(term(), type_set()) -> {pgc_proto:row_field(), pgc:oid()}.
 encode_value(null, _Types) ->
   {null, 0};
+encode_value(void, Types) ->
+  encode_value({void, void}, Types);
 encode_value(V, Types) when is_boolean(V) ->
   encode_value({boolean, V}, Types);
 encode_value(V, Types) when
@@ -206,6 +208,7 @@ oid_to_type(1560) -> {bit, {pgc_codec_bit, []}};
 oid_to_type(1561) -> {{array, bit}, {pgc_codec_array, [bit]}};
 oid_to_type(1562) -> {varbit, {pgc_codec_bit, []}};
 oid_to_type(1563) -> {{array, varbit}, {pgc_codec_array, [varbit]}};
+oid_to_type(2278) -> {void, {pgc_codec_void, []}};
 oid_to_type(2950) -> {uuid, {pgc_codec_uuid, []}};
 oid_to_type(2951) -> {{array, uuid}, {pgc_codec_array, [uuid]}};
 oid_to_type(3802) -> {jsonb, {pgc_codec_jsonb, []}};
@@ -248,6 +251,7 @@ name_to_oid(timetz) -> 1266;
 name_to_oid(uuid) -> 2950;
 name_to_oid(varbit) -> 1562;
 name_to_oid(varchar) -> 1043;
+name_to_oid(void) -> 2278;
 name_to_oid(xml) -> 142;
 name_to_oid({array, bit}) -> 1561;
 name_to_oid({array, boolean}) -> 1000;
