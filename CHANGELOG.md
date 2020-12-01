@@ -9,6 +9,7 @@
 - Add functions to manipulate timestamp and time values.
 - Add a `log_messages` client option to log messages received by the
   client. Default to false to avoid spamming as it was before.
+- Add `pgc_utils:quote_identifier/1`.
 ## Bugs
 - Fix query failure logging in `pgc:with_transaction/2`.
 - Fix response handling for empty statements.

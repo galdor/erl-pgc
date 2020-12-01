@@ -15,7 +15,8 @@
 -module(pgc_utils).
 
 -export([timestamp/1, timestamp_to_erlang_datetime/1,
-         time/1, time_to_erlang_time/1]).
+         time/1, time_to_erlang_time/1,
+         quote_identifier/1]).
 
 -spec timestamp(calendar:datetime()) -> pgc:timestamp().
 timestamp({Date, Time}) ->
@@ -32,3 +33,19 @@ time({H, M, S}) ->
 -spec time_to_erlang_time(pgc:time()) -> calendar:time().
 time_to_erlang_time({H, M, S, _}) ->
   {H, M, S}.
+
+-spec quote_identifier(unicode:chardata()) -> binary().
+quote_identifier(Id) when is_binary(Id) ->
+  quote_identifier(Id, false, <<>>);
+quote_identifier(Id) ->
+  quote_identifier(unicode:characters_to_binary(Id)).
+
+-spec quote_identifier(binary(), boolean(), binary()) -> binary().
+quote_identifier(<<>>, false, Acc) ->
+  Acc;
+quote_identifier(<<>>, true, Acc) ->
+  <<$", Acc/binary, $">>;
+quote_identifier(<<$", Rest/binary>>, _Quote, Acc) ->
+  quote_identifier(Rest, true, <<Acc/binary, $", $">>);
+quote_identifier(<<C/utf8, Rest/binary>>, Quote, Acc) ->
+  quote_identifier(Rest, Quote, <<Acc/binary, C/utf8>>).
