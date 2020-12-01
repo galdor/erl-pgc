@@ -522,7 +522,8 @@ query_response_to_exec_result(_) ->
                   [pgc:column_name()], pgc:query_options(), [pgc:row()]) ->
         {ok, [pgc:row()]} | {error, pgc:error_reason()}.
 decode_rows([], _, _, _, _, Acc) ->
-  {ok, lists:reverse(Acc)};
+  %% We do not reverse the list since response rows are already reversed
+  {ok, Acc};
 decode_rows([Row | Rows], Oids, Types, ColumnNames, Options, Acc) ->
   case decode_row(Row, Oids, Types, ColumnNames, Options) of
     {ok, DecodedRow} ->
