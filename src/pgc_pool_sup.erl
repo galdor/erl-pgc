@@ -12,24 +12,39 @@
 %% OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %% PERFORMANCE OF THIS SOFTWARE.
 
--module(pgc_sup).
+-module(pgc_pool_sup).
 
 -behaviour(supervisor).
 
--export([start_link/0]).
+-export([start_link/0, start_pool/2]).
 -export([init/1]).
 
 -spec start_link() -> supervisor:startlink_ret().
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
+-spec start_pool(pgc:pool_id(), pgc_pool:options()) ->
+        supervisor:startchild_ret().
+start_pool(Id, Options) ->
+  supervisor:start_child(?MODULE, pool_child_spec(Id, Options)).
+
 init([]) ->
-  Children = [#{id => model_registry,
-                start => {pgc_model_registry, start_link, []}},
-              #{id => pools,
-                start => {pgc_pool_sup, start_link, []},
-                type => supervisor}],
+  Children = pool_child_specs(),
   Flags = #{strategy => one_for_one,
             intensity => 1,
             period => 5},
   {ok, {Flags, Children}}.
+
+-spec pool_child_specs() -> [supervisor:child_spec()].
+pool_child_specs() ->
+  PoolSpecs = application:get_env(pgc, pools, #{}),
+  maps:fold(fun (Id, Options, Acc) ->
+                [pool_child_spec(Id, Options) | Acc]
+            end,
+            [], PoolSpecs).
+
+-spec pool_child_spec(pgc:pool_id(), pgc_pool:options()) ->
+        supervisor:child_spec().
+pool_child_spec(Id, Options) ->
+  #{id => Id,
+    start => {pgc_pool, start_link, [Id, Options]}}.

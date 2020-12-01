@@ -91,7 +91,7 @@
 -spec start_pool(pgc:pool_id(), pgc_pool:options()) ->
         supervisor:startchild_ret().
 start_pool(Id, Options) ->
-  pgc_sup:start_pool(Id, Options).
+  pgc_pool_sup:start_pool(Id, Options).
 
 -spec pool_stats(pool_id()) -> pgc_pool:stats().
 pool_stats(PoolId) ->

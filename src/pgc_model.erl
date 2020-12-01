@@ -14,10 +14,19 @@
 
 -module(pgc_model).
 
--export([entity_to_row/2, entity_to_row/3,
-         entity_from_row/2, entity_from_row/3]).
+-export([encode_entity/2, encode_entity/3,
+         decode_entity/2, decode_entity/3,
+         column_name_list/1, column_name_list/2,
+         column_name_csv/1, column_name_csv/2,
+         column_name/2]).
 
--export_type([model/0, model_key/0, model_value/0, row/0, column/0, entity/0]).
+-export_type([model_name/0, model_table_name/0,
+              model/0, model_key/0, model_value/0, row/0, column/0, entity/0]).
+
+-type model_ref() :: model_name() | model().
+
+-type model_name() :: atom().
+-type model_table_name() :: atom().
 
 -type model() :: #{model_key() := model_value()}.
 -type model_key() :: atom().
@@ -31,12 +40,17 @@
 
 -type entity() :: #{atom() := term()}.
 
--spec entity_to_row(entity(), model()) -> [query_parameter()].
-entity_to_row(Entity, Model) ->
-  entity_to_row(Entity, Model, maps:keys(Model)).
+-spec encode_entity(entity(), model_ref()) -> [query_parameter()].
+encode_entity(Entity, Model) when is_atom(Model) ->
+  encode_entity(Entity, pgc_model_registry:get_model(Model));
+encode_entity(Entity, Model) ->
+  encode_entity(Entity, Model, maps:keys(Model)).
 
--spec entity_to_row(entity(), model(), [model_key()]) -> [query_parameter()].
-entity_to_row(Entity, Model, Keys) ->
+-spec encode_entity(entity(), model_ref(), [model_key()]) ->
+        [query_parameter()].
+encode_entity(Entity, Model, Keys) when is_atom(Model) ->
+  encode_entity(Entity, pgc_model_registry:get_model(Model), Keys);
+encode_entity(Entity, Model, Keys) ->
   lists:map(fun (Key) ->
                 Value = case maps:find(Key, Entity) of
                           {ok, V} -> V;
@@ -45,12 +59,16 @@ entity_to_row(Entity, Model, Keys) ->
                 query_parameter(Value, Model, Key)
             end, Keys).
 
--spec entity_from_row(row(), model()) -> entity().
-entity_from_row(Row, Model) ->
-  entity_from_row(Row, Model, maps:keys(Model)).
+-spec decode_entity(row(), model_ref()) -> entity().
+decode_entity(Row, Model) when is_atom(Model) ->
+  decode_entity(Row, pgc_model_registry:get_model(Model));
+decode_entity(Row, Model) ->
+  decode_entity(Row, Model, maps:keys(Model)).
 
--spec entity_from_row(row(), model(), [model_key()]) -> entity().
-entity_from_row(Row, Model, Keys) ->
+-spec decode_entity(row(), model_ref(), [model_key()]) -> entity().
+decode_entity(Row, Model, Keys) when is_atom(Model) ->
+  decode_entity(Row, pgc_model_registry:get_model(Model), Keys);
+decode_entity(Row, Model, Keys) ->
   lists:foldl(fun ({Field, Key}, Entity) ->
                   case maps:is_key(Key, Model) of
                     true ->
@@ -62,6 +80,53 @@ entity_from_row(Row, Model, Keys) ->
                       error({unknown_model_key, Key, Model})
                   end
               end, #{}, lists:zip(Row, Keys)).
+
+-spec column_name_list(model_ref()) -> unicode:chardata().
+column_name_list(Model) when is_atom(Model) ->
+  column_name_list(pgc_model_registry:get_model(Model));
+column_name_list(Model) ->
+  column_name_list(Model, maps:keys(Model)).
+
+-spec column_name_list(model_ref(), [model_key()]) -> unicode:chardata().
+column_name_list(Model, Keys) when is_atom(Model) ->
+  column_name_list(pgc_model_registry:get_model(Model), Keys);
+column_name_list(Model, Keys) ->
+  [$(, column_name_csv(Model, Keys), $)].
+
+-spec column_name_csv(model_ref()) -> unicode:chardata().
+column_name_csv(Model) when is_atom(Model) ->
+  column_name_csv(pgc_model_registry:get_model(Model));
+column_name_csv(Model) ->
+  column_name_csv(Model, maps:keys(Model)).
+
+-spec column_name_csv(model_ref(), [model_key()]) -> unicode:chardata().
+column_name_csv(Model, Keys) when is_atom(Model) ->
+  column_name_csv(pgc_model_registry:get_model(Model), Keys);
+column_name_csv(Model, Keys) ->
+  Names = lists:map(fun (Key) -> column_name(Model, Key) end, Keys),
+  lists:join($,, Names).
+
+-spec column_name(model_ref(), model_key()) -> unicode:chardata().
+column_name(Model, Key) when is_atom(Model) ->
+  column_name(pgc_model_registry:get_model(Model), Key);
+column_name(Model, Key) ->
+  Column = column(Model, Key),
+  pgc_utils:quote_identifier(atom_to_binary(Column)).
+
+-spec columns(model(), [model_key()]) -> [column()].
+columns(Model, Keys) ->
+  lists:map(fun (Key) -> column(Model, Key) end, Keys).
+
+-spec column(model(), model_key()) -> column().
+column(Model, Key) ->
+  case maps:find(Key, Model) of
+    {ok, #{column := Column}} ->
+      Column;
+    {ok, _} ->
+      Key;
+    error ->
+      error({unknown_model_key, Key, Model})
+  end.
 
 -spec query_parameter(term(), model(), model_key()) -> query_parameter().
 query_parameter(Value, Model, Key) ->
