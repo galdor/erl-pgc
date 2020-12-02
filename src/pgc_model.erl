@@ -16,8 +16,9 @@
 
 -export([encode/2, encode/3,
          decode/2, decode/3,
-         column_tuple/1, column_tuple/2,
-         column_csv/1, column_csv/2,
+         column_tuple/1, column_tuple/2, column_csv/1, column_csv/2,
+         placeholder_tuple/1, placeholder_tuple/2,
+         placeholder_csv/1, placeholder_csv/2,
          column/2]).
 
 -export_type([model_name/0, model_table_name/0,
@@ -148,6 +149,32 @@ column(Model, Key) ->
              error({unknown_model_key, Key, Model})
          end,
   pgc_utils:quote_identifier(atom_to_binary(Name)).
+
+-spec placeholder_tuple(model_ref()) -> unicode:chardata().
+placeholder_tuple(Model) when is_atom(Model) ->
+  placeholder_tuple(pgc_model_registry:get_model(Model));
+placeholder_tuple(Model) ->
+  placeholder_tuple(Model, maps:keys(Model)).
+
+-spec placeholder_tuple(model_ref(), [model_key()]) -> unicode:chardata().
+placeholder_tuple(Model, Keys) when is_atom(Model) ->
+  placeholder_tuple(pgc_model_registry:get_model(Model), Keys);
+placeholder_tuple(Model, Keys) ->
+  [$(, placeholder_csv(Model, Keys), $)].
+
+-spec placeholder_csv(model_ref()) -> unicode:chardata().
+placeholder_csv(Model) when is_atom(Model) ->
+  placeholder_csv(pgc_model_registry:get_model(Model));
+placeholder_csv(Model) ->
+  placeholder_csv(Model, maps:keys(Model)).
+
+-spec placeholder_csv(model_ref(), [model_key()]) -> unicode:chardata().
+placeholder_csv(Model, Keys) when is_atom(Model) ->
+  placeholder_csv(pgc_model_registry:get_model(Model), Keys);
+placeholder_csv(_, Keys) ->
+  List = [<<$$, (integer_to_binary(N))/binary>> ||
+           N <- lists:seq(1, length(Keys))],
+  lists:join($,, List).
 
 -spec type(model(), model_key()) -> pgc_types:type_name().
 type(Model, Key) ->
