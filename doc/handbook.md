@@ -194,13 +194,13 @@ value. If the value is missing from the entity, the `null` pgc value is used.
 
 For example:
 ```erlang
-pgc_model:encode_entity(#{id => 42, name => <<"Bob">>}, user,
-                        [id, name, group_ids])
+pgc_model:encode(#{id => 42, name => <<"Bob">>}, user,
+                 [id, name, group_ids])
 ```
 will return `[{int4, 42}, {text, <<"Bob">>}, null]`.
 
-The `pgc_model:encode_entity/2` will behave similarly, using all keys defined
-in the model.
+The `pgc_model:encode/2` will behave similarly, using all keys defined in the
+model.
 
 #### Decoding
 Decoding also uses a list of entity keys: for each key, a row value is
@@ -209,32 +209,32 @@ null, the associated entity key is not added to the entity.
 
 For example:
 ```erlang
-pgc_model:decode_entity([42, null, [1,2,3]], user, [id, name, group_ids])
+pgc_model:decode([42, null, [1,2,3]], user, [id, name, group_ids])
 ```
 will return `#{id => 42, group_ids => [1,2,3]}`.
 
-The `pgc_model:decode_entity/2` will behave similarly, using all keys defined
-in the model.
+The `pgc_model:decode/2` will behave similarly, using all keys defined in the
+model.
 
 ### Columns
 Since data models contain the name of the associated database column, they can
 be used to build column name lists, e.g. to simplify SQL queries.
 
-At the most basic level, `pgc_model:column_name/2` will return the name of de
+At the most basic level, `pgc_model:column/2` will return the name of de
 column for a key in a model.
 
-The `pgc_model:column_name_csv/2` will return multiple column names separated
-by a comma. The `pgc_model:column_name_tuple/2` will return the same comma
-separated list enclosed in parentheses.
+The `pgc_model:column_csv/2` will return multiple column names separated by a
+comma. The `pgc_model:column_tuple/2` will return the same comma separated
+list enclosed in parentheses.
 
 For example:
 ```erlang
-pgc_model:column_name_tuple(user, [id, name])
+pgc_model:column_tuple(user, [id, name])
 ```
 Will return an iodata value equivalent to `(id, user_name)`.
 
-Like encoding and decoding functions, `pgc_model:column_name_csv/1` and
-`pgc_model:column_name_tuple/1` use all keys of the model.
+Like encoding and decoding functions, `pgc_model:column_csv/1` and
+`pgc_model:column_tuple/1` use all keys of the model.
 
 Note that these functions will correctly quote column names if necessary.
 
@@ -245,11 +245,11 @@ simple to mix literal strings and function calls.
 For example, a function loading a user could be implemented as follows:
 ```erlang
 load_user(Id) ->
-  Query = ["SELECT ", pgc_model:column_name_tuple(user),
+  Query = ["SELECT ", pgc_model:column_tuple(user),
            "  FROM users",
-           "  WHERE ", pgc_model:column_name(id), " = $1"],
+           "  WHERE ", pgc_model:column(id), " = $1"],
   {ok, _, [Row], _} = pgc:query(Query, [Id]),
-  pgc_model:decode_entity(Row).
+  pgc_model:decode(Row).
 ```
 
 # Caveats

@@ -24,9 +24,9 @@ test_model() ->
     d => #{type => date, column => 'été'},
     e => #{type => timestamp, column => '"foo"'}}.
 
-encode_entity_test_() ->
+encode_test_() ->
   Model = test_model(),
-  Encode = fun pgc_model:encode_entity/3,
+  Encode = fun pgc_model:encode/3,
   [?_assertEqual([],
                  Encode(#{a => 1}, Model, [])),
    ?_assertEqual([{int4, 42}],
@@ -41,9 +41,9 @@ encode_entity_test_() ->
                           e => {{2020, 10, 10}, {10, 20, 30}}},
                         Model, [d, e]))].
 
-decode_entity_test_() ->
+decode_test_() ->
   Model = test_model(),
-  Decode = fun pgc_model:decode_entity/3,
+  Decode = fun pgc_model:decode/3,
   [?_assertEqual(#{},
                  Decode([], Model, [])),
    ?_assertEqual(#{a => 42, b => <<"foo">>},
@@ -54,10 +54,10 @@ decode_entity_test_() ->
                  Decode([{2020, 10, 5}, {{2020, 10, 10}, {10, 20, 30, 0}}],
                         Model, [d, e]))].
 
-column_name_test_() ->
+column_test_() ->
   Model = test_model(),
   ColumnName = fun (M, K) ->
-                   unicode:characters_to_binary(pgc_model:column_name(M, K))
+                   unicode:characters_to_binary(pgc_model:column(M, K))
                end,
   [?_assertEqual(<<"a">>, ColumnName(Model, a)),
    ?_assertEqual(<<"b">>, ColumnName(Model, b)),
@@ -65,10 +65,10 @@ column_name_test_() ->
    ?_assertEqual(<<"\"été\""/utf8>>, ColumnName(Model, d)),
    ?_assertEqual(<<"\"\"\"foo\"\"\"">>, ColumnName(Model, e))].
 
-column_name_csv_test_() ->
+column_csv_test_() ->
   Model = test_model(),
   ColumnNameCSV = fun (M, Ks) ->
-                      Data = pgc_model:column_name_csv(M, Ks),
+                      Data = pgc_model:column_csv(M, Ks),
                       unicode:characters_to_binary(Data)
                   end,
   [?_assertEqual(<<"">>, ColumnNameCSV(Model, [])),
@@ -76,10 +76,10 @@ column_name_csv_test_() ->
    ?_assertEqual(<<"a,\"été\",\"\"\"foo\"\"\""/utf8>>,
                  ColumnNameCSV(Model, [a, d, e]))].
 
-column_name_tuple_test_() ->
+column_tuple_test_() ->
   Model = test_model(),
   ColumnNameTuple = fun (M, Ks) ->
-                        Data = pgc_model:column_name_tuple(M, Ks),
+                        Data = pgc_model:column_tuple(M, Ks),
                         unicode:characters_to_binary(Data)
                     end,
   [?_assertEqual(<<"()">>, ColumnNameTuple(Model, [])),
