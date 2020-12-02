@@ -16,7 +16,7 @@
 
 -export([encode_entity/2, encode_entity/3,
          decode_entity/2, decode_entity/3,
-         column_name_list/1, column_name_list/2,
+         column_name_tuple/1, column_name_tuple/2,
          column_name_csv/1, column_name_csv/2,
          column_name/2]).
 
@@ -82,16 +82,16 @@ decode_entity(Row, Model, Keys) ->
                   end
               end, #{}, lists:zip(Row, Keys)).
 
--spec column_name_list(model_ref()) -> unicode:chardata().
-column_name_list(Model) when is_atom(Model) ->
-  column_name_list(pgc_model_registry:get_model(Model));
-column_name_list(Model) ->
-  column_name_list(Model, maps:keys(Model)).
+-spec column_name_tuple(model_ref()) -> unicode:chardata().
+column_name_tuple(Model) when is_atom(Model) ->
+  column_name_tuple(pgc_model_registry:get_model(Model));
+column_name_tuple(Model) ->
+  column_name_tuple(Model, maps:keys(Model)).
 
--spec column_name_list(model_ref(), [model_key()]) -> unicode:chardata().
-column_name_list(Model, Keys) when is_atom(Model) ->
-  column_name_list(pgc_model_registry:get_model(Model), Keys);
-column_name_list(Model, Keys) ->
+-spec column_name_tuple(model_ref(), [model_key()]) -> unicode:chardata().
+column_name_tuple(Model, Keys) when is_atom(Model) ->
+  column_name_tuple(pgc_model_registry:get_model(Model), Keys);
+column_name_tuple(Model, Keys) ->
   [$(, column_name_csv(Model, Keys), $)].
 
 -spec column_name_csv(model_ref()) -> unicode:chardata().
