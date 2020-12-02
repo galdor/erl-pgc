@@ -234,15 +234,28 @@ pgc_model:column_name_tuple(user, [id, name])
 Will return an iodata value equivalent to `(id, user_name)`.
 
 Like encoding and decoding functions, `pgc_model:column_name_csv/1` and
-`pgc_mode:column_name_tuple/1` use all keys of the model.
+`pgc_model:column_name_tuple/1` use all keys of the model.
 
 Note that these functions will correctly quote column names if necessary.
+
+### Usage
+Since pgc query functions accept queries of type `unicode:chardata()`, it is
+simple to mix literal strings and function calls.
+
+For example, a function loading a user could be implemented as follows:
+```erlang
+load_user(Id) ->
+  Query = ["SELECT ", pgc_model:column_name_tuple(user),
+           "  FROM users",
+           "  WHERE ", pgc_model:column_name(id), " = $1"],
+  {ok, _, [Row], _} = pgc:query(Query, [Id]),
+  pgc_model:decode_entity(Row).
+```
 
 # Caveats
 ## Character encoding
 We currently only support databases whose character encoding is
-UTF-8. Supporting other database character encodings would require to
-either:
+UTF-8. Supporting other database character encodings would require to either:
 - stop converting text data with `unicode:characters_to_binary/1` and use
   binaries without any validation;
 - detect the database character encoding and use something such as iconv to
