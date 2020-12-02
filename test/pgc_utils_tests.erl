@@ -17,11 +17,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 quote_identifier_test_() ->
-  [?_assertEqual(<<"">>, pgc_utils:quote_identifier(<<"">>)),
-   ?_assertEqual(<<"">>, pgc_utils:quote_identifier("")),
-   ?_assertEqual(<<"foo">>, pgc_utils:quote_identifier(<<"foo">>)),
-   ?_assertEqual(<<"été"/utf8>>, pgc_utils:quote_identifier(<<"été"/utf8>>)),
+  [?_assertEqual(<<"foo">>, pgc_utils:quote_identifier(<<"foo">>)),
+   ?_assertEqual(<<"foo">>, pgc_utils:quote_identifier("foo")),
+   ?_assertEqual(<<"\"été\""/utf8>>, pgc_utils:quote_identifier(<<"été"/utf8>>)),
    ?_assertEqual(<<"\"foo \"\"bar\"\" baz\"">>,
                  pgc_utils:quote_identifier(<<"foo \"bar\" baz">>)),
+   ?_assertEqual(<<"\"foo bar baz\"">>,
+                 pgc_utils:quote_identifier(<<"foo bar baz">>)),
    ?_assertEqual(<<"\"\"\"hello\"\"\"">>,
                  pgc_utils:quote_identifier(<<"\"hello\"">>))].

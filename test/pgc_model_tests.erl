@@ -62,7 +62,7 @@ column_name_test_() ->
   [?_assertEqual(<<"a">>, ColumnName(Model, a)),
    ?_assertEqual(<<"b">>, ColumnName(Model, b)),
    ?_assertEqual(<<"hello">>, ColumnName(Model, c)),
-   ?_assertEqual(<<"été"/utf8>>, ColumnName(Model, d)),
+   ?_assertEqual(<<"\"été\""/utf8>>, ColumnName(Model, d)),
    ?_assertEqual(<<"\"\"\"foo\"\"\"">>, ColumnName(Model, e))].
 
 column_name_csv_test_() ->
@@ -73,7 +73,7 @@ column_name_csv_test_() ->
                   end,
   [?_assertEqual(<<"">>, ColumnNameCSV(Model, [])),
    ?_assertEqual(<<"a">>, ColumnNameCSV(Model, [a])),
-   ?_assertEqual(<<"a,été,\"\"\"foo\"\"\""/utf8>>,
+   ?_assertEqual(<<"a,\"été\",\"\"\"foo\"\"\""/utf8>>,
                  ColumnNameCSV(Model, [a, d, e]))].
 
 column_name_tuple_test_() ->
@@ -84,5 +84,5 @@ column_name_tuple_test_() ->
                     end,
   [?_assertEqual(<<"()">>, ColumnNameTuple(Model, [])),
    ?_assertEqual(<<"(a)">>, ColumnNameTuple(Model, [a])),
-   ?_assertEqual(<<"(a,été,\"\"\"foo\"\"\")"/utf8>>,
+   ?_assertEqual(<<"(a,\"été\",\"\"\"foo\"\"\")"/utf8>>,
                  ColumnNameTuple(Model, [a, d, e]))].

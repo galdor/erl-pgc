@@ -36,16 +36,19 @@ time_to_erlang_time({H, M, S, _}) ->
 
 -spec quote_identifier(unicode:chardata()) -> binary().
 quote_identifier(Id) when is_binary(Id) ->
-  quote_identifier(Id, false, <<>>);
+  case re:run(Id, "^[a-zA-Z_][a-zA-Z0-9_$]*$") of
+    {match, _} ->
+      Id;
+    nomatch ->
+      quote_identifier(Id, <<>>)
+  end;
 quote_identifier(Id) ->
   quote_identifier(unicode:characters_to_binary(Id)).
 
--spec quote_identifier(binary(), boolean(), binary()) -> binary().
-quote_identifier(<<>>, false, Acc) ->
-  Acc;
-quote_identifier(<<>>, true, Acc) ->
+-spec quote_identifier(binary(), binary()) -> binary().
+quote_identifier(<<>>, Acc) ->
   <<$", Acc/binary, $">>;
-quote_identifier(<<$", Rest/binary>>, _Quote, Acc) ->
-  quote_identifier(Rest, true, <<Acc/binary, $", $">>);
-quote_identifier(<<C/utf8, Rest/binary>>, Quote, Acc) ->
-  quote_identifier(Rest, Quote, <<Acc/binary, C/utf8>>).
+quote_identifier(<<$", Rest/binary>>, Acc) ->
+  quote_identifier(Rest, <<Acc/binary, $", $">>);
+quote_identifier(<<C, Rest/binary>>, Acc) ->
+  quote_identifier(Rest, <<Acc/binary, C>>).
