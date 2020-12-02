@@ -125,6 +125,119 @@ introduce `pgc:float_value()` which extends `float()` with `nan`,
 `positive_infinity` and `negative_infinity`. These values are supported for
 both decoding and encoding. We use a quiet NaN value.
 
+# Data models
+Mapping database relational data to in-memory business data is not always
+simple: among other things, data types are different, supported value ranges
+vary, and optional values are handled differently.
+
+Developers usually convert data in functions which interact with the database,
+which is a repetitive and error-prone task.
+
+The `pgc_model` module introduces the concept of data model. A model describes
+how a business entity is represented as a row in the database. Each model
+describes the way each value of the business entity is represented in the
+database.
+
+With these information, we can then use various functions to simplify
+conversions from and to database values.
+
+## Model
+A model is a map where each key is an atom being the name of the entity key
+and each value is a model value.
+
+A model value is either a database type, or a map containing the following
+entries:
+- `type`: the database type used to represent the value in the database.
+- `column`: the name of the database column as an atom (optional, the default
+  value being the key of the entry).
+
+Example:
+```erlang
+#{id => int4,
+  name => #{type => text, column => user_name},
+  group_ids => {array, int4}}
+```
+
+## Model registry
+Model functions usually accept a model reference, i.e. either a model value
+(as defined above) or an atom being an entry in the model registry.
+
+The registry stores all models in a ETS table named `pgc_model_registry`.
+
+Models can be registered using `pgc_model_registry:register_model/2`.
+
+Example:
+```erlang
+UserModel = #{id => int4,
+              name => #{type => text, column => full_name},
+              group_ids => {array, int4}},
+pgc_model_registry:register_model(user, UserModel).
+```
+
+After this call, model functions can use the `user` atom directly as model
+reference. Note that since there is a single global registry, applications
+should take care to prefix model names, as they usually do with modules or
+registered process names.
+
+A simple way to manage data models is for each OTP application to register the
+model it uses during startup.
+
+### Encoding and decoding
+We define the notion of encoding as converting a business entity to a list of
+typed values to be used in pgc query functions, and the notion of decoding as
+converting database rows returned by pgc query functions to a business entity.
+
+#### Encoding
+Encoding is based on a list of entity keys: for each key, the associated value
+is extracted from the business entity and converted to a pgc typed
+value. If the value is missing from the entity, the `null` pgc value is used.
+
+For example:
+```erlang
+pgc_model:encode_entity(#{id => 42, name => <<"Bob">>}, user,
+                        [id, name, group_ids])
+```
+will return `[{int4, 42}, {text, <<"Bob">>}, null]`.
+
+The `pgc_model:encode_entity/2` will behave similarly, using all keys defined
+in the model.
+
+#### Decoding
+Decoding also uses a list of entity keys: for each key, a row value is
+extracted and used to add the corresponding entity value. When a field is
+null, the associated entity key is not added to the entity.
+
+For example:
+```erlang
+pgc_model:decode_entity([42, null, [1,2,3]], user, [id, name, group_ids])
+```
+will return `#{id => 42, group_ids => [1,2,3]}`.
+
+The `pgc_model:decode_entity/2` will behave similarly, using all keys defined
+in the model.
+
+### Columns
+Since data models contain the name of the associated database column, they can
+be used to build column name lists, e.g. to simplify SQL queries.
+
+At the most basic level, `pgc_model:column_name/2` will return the name of de
+column for a key in a model.
+
+The `pgc_model:column_name_csv/2` will return multiple column names separated
+by a comma. The `pgc_model:column_name_tuple/2` will return the same comma
+separated list enclosed in parentheses.
+
+For example:
+```erlang
+pgc_model:column_name_tuple(user, [id, name])
+```
+Will return an iodata value equivalent to `(id, user_name)`.
+
+Like encoding and decoding functions, `pgc_model:column_name_csv/1` and
+`pgc_mode:column_name_tuple/1` use all keys of the model.
+
+Note that these functions will correctly quote column names if necessary.
+
 # Caveats
 ## Character encoding
 We currently only support databases whose character encoding is
