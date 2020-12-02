@@ -34,21 +34,21 @@
                      | #{type := pgc_types:type_name(),
                          column => column()}.
 
--type query_parameter() :: {pgc_types:type_name(), term()}.
+-type encoded_value() :: {pgc_types:type_name(), term()}.
 
 -type row() :: [term()].
 -type column() :: atom().
 
 -type entity() :: #{atom() := term()}.
 
--spec encode_entity(entity(), model_ref()) -> [query_parameter()].
+-spec encode_entity(entity(), model_ref()) -> [encoded_value()].
 encode_entity(Entity, Model) when is_atom(Model) ->
   encode_entity(Entity, pgc_model_registry:get_model(Model));
 encode_entity(Entity, Model) ->
   encode_entity(Entity, Model, maps:keys(Model)).
 
 -spec encode_entity(entity(), model_ref(), [model_key()]) ->
-        [query_parameter()].
+        [encoded_value()].
 encode_entity(Entity, Model, Keys) when is_atom(Model) ->
   encode_entity(Entity, pgc_model_registry:get_model(Model), Keys);
 encode_entity(Entity, Model, Keys) ->
@@ -57,8 +57,27 @@ encode_entity(Entity, Model, Keys) ->
                           {ok, V} -> V;
                           error -> null
                         end,
-                query_parameter(Value, Model, Key)
+                encode_value(Value, Model, Key)
             end, Keys).
+
+-spec encode_value(term(), model(), model_key()) -> encoded_value().
+encode_value(Value, Model, Key) ->
+  case type(Model, Key) of
+    time ->
+      encode_time(Value);
+    timestamp ->
+      encode_timestamp(Value);
+    Type ->
+      {Type, Value}
+  end.
+
+-spec encode_time(calendar:time()) -> encoded_value().
+encode_time({H, M, S}) ->
+  {time, {H, M, S, 0}}.
+
+-spec encode_timestamp(calendar:datetime()) -> encoded_value().
+encode_timestamp({Date, {H, M, S}}) ->
+  {timestamp, {Date, {H, M, S, 0}}}.
 
 -spec decode_entity(row(), model_ref()) -> entity().
 decode_entity(Row, Model) when is_atom(Model) ->
@@ -125,13 +144,13 @@ column(Model, Key) ->
       error({unknown_model_key, Key, Model})
   end.
 
--spec query_parameter(term(), model(), model_key()) -> query_parameter().
-query_parameter(Value, Model, Key) ->
+-spec type(model(), model_key()) -> pgc_types:type_name().
+type(Model, Key) ->
   case maps:find(Key, Model) of
     {ok, #{type := Type}} ->
-      {Type, Value};
+      Type;
     {ok, Type} when is_atom(Type); is_tuple(Type) ->
-      {Type, Value};
+      Type;
     error ->
       error({unknown_model_key, Key, Model})
   end.
