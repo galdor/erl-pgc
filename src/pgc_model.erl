@@ -72,12 +72,12 @@ encode_value(Value, Model, Key) ->
   end.
 
 -spec encode_time(calendar:time()) -> encoded_value().
-encode_time({H, M, S}) ->
-  {time, {H, M, S, 0}}.
+encode_time(Time) ->
+  {time, pgc_utils:time(Time)}.
 
 -spec encode_timestamp(calendar:datetime()) -> encoded_value().
-encode_timestamp({Date, {H, M, S}}) ->
-  {timestamp, {Date, {H, M, S, 0}}}.
+encode_timestamp(Datetime) ->
+  {timestamp, pgc_utils:timestamp(Datetime)}.
 
 -spec decode_entity(row(), model_ref()) -> entity().
 decode_entity(Row, Model) when is_atom(Model) ->
@@ -90,16 +90,25 @@ decode_entity(Row, Model, Keys) when is_atom(Model) ->
   decode_entity(Row, pgc_model_registry:get_model(Model), Keys);
 decode_entity(Row, Model, Keys) ->
   lists:foldl(fun ({Field, Key}, Entity) ->
-                  case maps:is_key(Key, Model) of
-                    true ->
-                      case Field of
-                        null -> Entity;
-                        _ -> Entity#{Key => Field}
-                      end;
-                    false ->
-                      error({unknown_model_key, Key, Model})
+                  case {Field, type(Model, Key)} of
+                    {null, _} ->
+                      Entity;
+                    {_, time} ->
+                      Entity#{Key => decode_time(Field)};
+                    {_, timestamp} ->
+                      Entity#{Key => decode_timestamp(Field)};
+                    {_, _} ->
+                      Entity#{Key => Field}
                   end
               end, #{}, lists:zip(Row, Keys)).
+
+-spec decode_time(pgc:time()) -> calendar:time().
+decode_time(Time) ->
+  pgc_utils:time_to_erlang_time(Time).
+
+-spec decode_timestamp(pgc:timestamp()) -> calendar:datetime().
+decode_timestamp(Timestamp) ->
+  pgc_utils:timestamp_to_erlang_datetime(Timestamp).
 
 -spec column_name_tuple(model_ref()) -> unicode:chardata().
 column_name_tuple(Model) when is_atom(Model) ->
