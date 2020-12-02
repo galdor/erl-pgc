@@ -16,6 +16,7 @@
 ## Misc
 - Query functions now return type decoding errors instead of signalling them
   with `error/1`.
+- Registered names are now listed in the application definition file.
 
 # 1.3.0
 ## Features
