@@ -30,7 +30,8 @@
 
 -type model() :: #{model_key() := model_value()}.
 -type model_key() :: atom().
--type model_value() :: #{type := pgc_types:type_name(),
+-type model_value() :: pgc_types:type_name()
+                     | #{type := pgc_types:type_name(),
                          column => column()}.
 
 -type query_parameter() :: {pgc_types:type_name(), term()}.
@@ -132,6 +133,8 @@ column(Model, Key) ->
 query_parameter(Value, Model, Key) ->
   case maps:find(Key, Model) of
     {ok, #{type := Type}} ->
+      {Type, Value};
+    {ok, Type} when is_atom(Type); is_tuple(Type) ->
       {Type, Value};
     error ->
       error({unknown_model_key, Key, Model})
