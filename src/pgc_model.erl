@@ -114,10 +114,6 @@ column_name(Model, Key) ->
   Column = column(Model, Key),
   pgc_utils:quote_identifier(atom_to_binary(Column)).
 
--spec columns(model(), [model_key()]) -> [column()].
-columns(Model, Keys) ->
-  lists:map(fun (Key) -> column(Model, Key) end, Keys).
-
 -spec column(model(), model_key()) -> column().
 column(Model, Key) ->
   case maps:find(Key, Model) of
