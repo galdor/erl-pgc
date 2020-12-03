@@ -33,7 +33,11 @@
 -type model_key() :: atom().
 -type model_value() :: pgc_types:type_name()
                      | #{type := pgc_types:type_name(),
-                         column => column()}.
+                         column => column(),
+                         encode => encode_fun(),
+                         decode => decode_fun}.
+-type encode_fun() :: fun((term()) -> encoded_value()).
+-type decode_fun() :: fun((encoded_value()) -> term()).
 
 -type encoded_value() :: {pgc_types:type_name(), term()}.
 
@@ -63,13 +67,18 @@ encode(Entity, Model, Keys) ->
 
 -spec encode_value(term(), model(), model_key()) -> encoded_value().
 encode_value(Value, Model, Key) ->
-  case type(Model, Key) of
-    time ->
-      encode_time(Value);
-    timestamp ->
-      encode_timestamp(Value);
-    Type ->
-      {Type, Value}
+  case encode_fun(Model, Key) of
+    {ok, Encode} ->
+      Encode(Value);
+    error ->
+      case type(Model, Key) of
+        time ->
+          encode_time(Value);
+        timestamp ->
+          encode_timestamp(Value);
+        Type ->
+          {Type, Value}
+      end
   end.
 
 -spec encode_time(calendar:time()) -> encoded_value().
@@ -91,15 +100,20 @@ decode(Row, Model, Keys) when is_atom(Model) ->
   decode(Row, pgc_model_registry:get_model(Model), Keys);
 decode(Row, Model, Keys) ->
   lists:foldl(fun ({Field, Key}, Entity) ->
-                  case {Field, type(Model, Key)} of
-                    {null, _} ->
-                      Entity;
-                    {_, time} ->
-                      Entity#{Key => decode_time(Field)};
-                    {_, timestamp} ->
-                      Entity#{Key => decode_timestamp(Field)};
-                    {_, _} ->
-                      Entity#{Key => Field}
+                  case decode_fun(Model, Key) of
+                    {ok, Decode} ->
+                      Entity#{Key => Decode(Field)};
+                    error ->
+                      case {Field, type(Model, Key)} of
+                        {null, _} ->
+                          Entity;
+                        {_, time} ->
+                          Entity#{Key => decode_time(Field)};
+                        {_, timestamp} ->
+                          Entity#{Key => decode_timestamp(Field)};
+                        {_, _} ->
+                          Entity#{Key => Field}
+                      end
                   end
               end, #{}, lists:zip(Row, Keys)).
 
@@ -183,6 +197,28 @@ type(Model, Key) ->
       Type;
     {ok, Type} when is_atom(Type); is_tuple(Type) ->
       Type;
+    error ->
+      error({unknown_model_key, Key, Model})
+  end.
+
+-spec encode_fun(model(), model_key()) -> {ok, encode_fun()} | error.
+encode_fun(Model, Key) ->
+  case maps:find(Key, Model) of
+    {ok, #{encode := Encode}} ->
+      {ok, Encode};
+    {ok, _} ->
+      error;
+    error ->
+      error({unknown_model_key, Key, Model})
+  end.
+
+-spec decode_fun(model(), model_key()) -> {ok, decode_fun()} | error.
+decode_fun(Model, Key) ->
+  case maps:find(Key, Model) of
+    {ok, #{decode := Decode}} ->
+      {ok, Decode};
+    {ok, _} ->
+      error;
     error ->
       error({unknown_model_key, Key, Model})
   end.

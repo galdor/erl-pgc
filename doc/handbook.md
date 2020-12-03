@@ -150,6 +150,10 @@ entries:
 - `type`: the database type used to represent the value in the database.
 - `column`: the name of the database column as an atom (optional, the default
   value being the key of the entry).
+- `encode`: a custom encoding function which transforms an Erlang term into a
+  typed pgc value of the form `{Type, Value}`.
+- `decode`: a custom decoding function which transforms a pgc value into an
+  Erlang term.
 
 Example:
 ```erlang

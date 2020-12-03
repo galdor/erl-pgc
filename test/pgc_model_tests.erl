@@ -22,7 +22,24 @@ test_model() ->
     b => #{type => text},
     c => #{type => boolean, column => hello},
     d => #{type => date, column => 'été'},
-    e => #{type => timestamp, column => '"foo"'}}.
+    e => #{type => timestamp, column => '"foo"'},
+    f => #{type => timestamp,
+           encode => fun encode_ms_system_time/1,
+           decode => fun decode_ms_system_time/1}}.
+
+-spec encode_ms_system_time(integer()) -> {timestamp, pgc:timestamp()}.
+encode_ms_system_time(SysTime) ->
+  Seconds = SysTime div 1000,
+  Milliseconds = SysTime rem 1000,
+  {Date, {H, M, S}} = calendar:system_time_to_universal_time(Seconds, second),
+  {timestamp, {Date, {H, M, S, Milliseconds*1000}}}.
+
+-spec decode_ms_system_time(pgc:timestamp()) -> integer().
+decode_ms_system_time(Timestamp = {_Date, {_H, _M, _S, US}}) ->
+  Datetime = pgc_utils:timestamp_to_erlang_datetime(Timestamp),
+  Seconds = calendar:datetime_to_gregorian_seconds(Datetime),
+  Offset = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
+  (Seconds - Offset) * 1000 + (US div 1000).
 
 encode_test_() ->
   Model = test_model(),
@@ -39,7 +56,9 @@ encode_test_() ->
                   {timestamp, {{2020, 10, 10}, {10, 20, 30, 0}}}],
                  Encode(#{d => {2020, 10, 5},
                           e => {{2020, 10, 10}, {10, 20, 30}}},
-                        Model, [d, e]))].
+                        Model, [d, e])),
+   ?_assertEqual([{timestamp, {{2020, 12, 3}, {6, 21, 22, 235_000}}}],
+                 Encode(#{f => 1606976482235}, Model, [f]))].
 
 decode_test_() ->
   Model = test_model(),
@@ -52,7 +71,9 @@ decode_test_() ->
                  Decode([null, <<"foo">>, null], Model, [a, b, c])),
    ?_assertEqual(#{d => {2020, 10, 5}, e => {{2020, 10, 10}, {10, 20, 30}}},
                  Decode([{2020, 10, 5}, {{2020, 10, 10}, {10, 20, 30, 0}}],
-                        Model, [d, e]))].
+                        Model, [d, e])),
+   ?_assertEqual(#{f => 1606976482235},
+                 Decode([{{2020, 12, 3}, {6, 21, 22, 235_000}}], Model, [f]))].
 
 column_test_() ->
   Model = test_model(),
