@@ -19,7 +19,7 @@
          column_tuple/1, column_tuple/2, column_csv/1, column_csv/2,
          placeholder_tuple/1, placeholder_tuple/2,
          placeholder_csv/1, placeholder_csv/2,
-         column/2]).
+         columns/1, columns/2, column/2]).
 
 -export_type([model_name/0, model_table_name/0,
               model/0, model_key/0, model_value/0, row/0, column/0, entity/0]).
@@ -149,6 +149,18 @@ column_csv(Model, Keys) when is_atom(Model) ->
 column_csv(Model, Keys) ->
   Names = lists:map(fun (Key) -> column(Model, Key) end, Keys),
   lists:join($,, Names).
+
+-spec columns(model_ref()) -> [unicode:chardata()].
+columns(Model) when is_atom(Model) ->
+  columns(pgc_model_registry:get_model(Model));
+columns(Model) ->
+  columns(Model, maps:keys(Model)).
+
+-spec columns(model_ref(), [model_key()]) -> [unicode:chardata()].
+columns(Model, Keys) when is_atom(Model) ->
+  columns(pgc_model_registry:get_model(Model), Keys);
+columns(Model, Keys) ->
+  lists:map(fun (Key) -> column(Model, Key) end, Keys).
 
 -spec column(model_ref(), model_key()) -> unicode:chardata().
 column(Model, Key) when is_atom(Model) ->
