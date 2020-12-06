@@ -22,7 +22,7 @@
          query/2, query/3, query/4,
          register_model/2, unregister_model/1]).
 
--export_type([pool_id/0,
+-export_type([pool_id/0, client_ref/0,
               error/0, notice/0,
               error_reason/0,
               query_options/0, query_result/0, exec_result/0,
@@ -36,6 +36,7 @@
               uuid/0]).
 
 -type pool_id() :: atom().
+-type client_ref() :: pgc_client:ref().
 
 -type error() :: pgc_proto:error_and_notice_fields().
 -type notice() :: pgc_proto:error_and_notice_fields().
@@ -98,11 +99,11 @@ start_pool(Id, Options) ->
 pool_stats(PoolId) ->
   pgc_pool:stats(pgc_pool:process_name(PoolId)).
 
--spec acquire(pool_id()) -> {ok, pgc_client:ref()} | {error, term()}.
+-spec acquire(pool_id()) -> {ok, pgc:client_ref()} | {error, term()}.
 acquire(PoolId) ->
   pgc_pool:acquire(pgc_pool:process_name(PoolId)).
 
--spec release(pool_id(), pgc_client:ref()) -> ok.
+-spec release(pool_id(), pgc:client_ref()) -> ok.
 release(PoolId, Client) ->
   pgc_pool:release(pgc_pool:process_name(PoolId), Client).
 
@@ -115,35 +116,35 @@ with_client(PoolId, Fun) ->
 with_transaction(PoolId, Fun) ->
   pgc_pool:with_transaction(pgc_pool:process_name(PoolId), Fun).
 
--spec simple_exec(pgc_client:ref(), Query :: unicode:chardata()) ->
+-spec simple_exec(pgc:client_ref(), Query :: unicode:chardata()) ->
         exec_result().
 simple_exec(Ref, Query)  ->
   pgc_client:simple_exec(Ref, Query).
 
--spec exec(pgc_client:ref(), Query :: unicode:chardata()) -> exec_result().
+-spec exec(pgc:client_ref(), Query :: unicode:chardata()) -> exec_result().
 exec(Ref, Query)  ->
   pgc_client:exec(Ref, Query, [], #{}).
 
--spec exec(pgc_client:ref(), Query :: unicode:chardata(), Params :: [term()]) ->
+-spec exec(pgc:client_ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         exec_result().
 exec(Ref, Query, Params) ->
   pgc_client:exec(Ref, Query, Params, #{}).
 
--spec exec(pgc_client:ref(), Query :: unicode:chardata(), Params :: [term()],
+-spec exec(pgc:client_ref(), Query :: unicode:chardata(), Params :: [term()],
            query_options()) -> exec_result().
 exec(Ref, Query, Params, Options) ->
   pgc_client:exec(Ref, Query, Params, Options).
 
--spec query(pgc_client:ref(), Query :: unicode:chardata()) -> query_result().
+-spec query(pgc:client_ref(), Query :: unicode:chardata()) -> query_result().
 query(Ref, Query) ->
   pgc_client:query(Ref, Query, [], #{}).
 
--spec query(pgc_client:ref(), Query :: unicode:chardata(), Params :: [term()]) ->
+-spec query(pgc:client_ref(), Query :: unicode:chardata(), Params :: [term()]) ->
         query_result().
 query(Ref, Query, Params) ->
   pgc_client:query(Ref, Query, Params, #{}).
 
--spec query(pgc_client:ref(), Query :: unicode:chardata(), Params :: [term()],
+-spec query(pgc:client_ref(), Query :: unicode:chardata(), Params :: [term()],
             query_options()) -> query_result().
 query(Ref, Query, Params, Options) ->
   pgc_client:query(Ref, Query, Params, Options).
