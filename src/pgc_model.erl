@@ -19,6 +19,7 @@
          column_tuple/1, column_tuple/2, column_csv/1, column_csv/2,
          placeholder_tuple/1, placeholder_tuple/2,
          placeholder_csv/1, placeholder_csv/2,
+         placeholder_list/2,
          columns/1, columns/2, column/2]).
 
 -export_type([model_name/0, model_table_name/0,
@@ -198,9 +199,12 @@ placeholder_csv(Model) ->
 placeholder_csv(Model, Keys) when is_atom(Model) ->
   placeholder_csv(pgc_model_registry:get_model(Model), Keys);
 placeholder_csv(_, Keys) ->
-  List = [<<$$, (integer_to_binary(N))/binary>> ||
-           N <- lists:seq(1, length(Keys))],
-  lists:join($,, List).
+  lists:join($,, placeholder_list(1, length(Keys))).
+
+-spec placeholder_list(Min :: pos_integer(), Max :: pos_integer()) ->
+        [binary()].
+placeholder_list(Min, Max) ->
+  [<<$$, (integer_to_binary(N))/binary>> || N <- lists:seq(Min, Max)].
 
 -spec type(model(), model_key()) -> pgc_types:type_name().
 type(Model, Key) ->
