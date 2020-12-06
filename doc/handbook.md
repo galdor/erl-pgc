@@ -168,7 +168,7 @@ Model functions usually accept a model reference, i.e. either a model value
 
 The registry stores all models in a ETS table named `pgc_model_registry`.
 
-Models can be registered using `pgc_model_registry:register_model/2`.
+Models can be registered using `pgc:register_model/2`.
 
 Example:
 ```erlang
