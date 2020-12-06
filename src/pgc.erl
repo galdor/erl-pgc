@@ -19,7 +19,8 @@
          acquire/1, release/2,
          with_client/2, with_transaction/2,
          simple_exec/2, exec/2, exec/3, exec/4,
-         query/2, query/3, query/4]).
+         query/2, query/3, query/4,
+         register_model/2, unregister_model/1]).
 
 -export_type([pool_id/0,
               error/0, notice/0,
@@ -146,3 +147,11 @@ query(Ref, Query, Params) ->
             query_options()) -> query_result().
 query(Ref, Query, Params, Options) ->
   pgc_client:query(Ref, Query, Params, Options).
+
+-spec register_model(pgc_model:model_name(), pgc_model:model()) -> ok.
+register_model(Name, Model) ->
+  pgc_model_registry:register_model(Name, Model).
+
+-spec unregister_model(pgc_model:model_name()) -> ok.
+unregister_model(Name) ->
+  pgc_model_registry:unregister_model(Name).
