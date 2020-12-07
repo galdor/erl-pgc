@@ -24,7 +24,7 @@
 
 -export_type([pool_id/0, client_ref/0,
               error/0, notice/0,
-              error_reason/0,
+              error_reason/0, client_error_reason/0,
               query_options/0, query_result/0, exec_result/0,
               column_name/0, row/0,
               oid/0, float_value/0,
@@ -41,7 +41,12 @@
 -type error() :: pgc_proto:error_and_notice_fields().
 -type notice() :: pgc_proto:error_and_notice_fields().
 
--type error_reason() :: error() | {unknown_type, oid()}.
+-type error_reason() :: error()
+                      | {client_error, client_error_reason()}
+                      | {unknown_type, oid()}.
+
+-type client_error_reason() :: {connect, term()}
+                             | {unexpected_msg, pgc_proto:msg()}.
 
 -type query_options() :: #{column_names_as_atoms => boolean(),
                            rows_as_hashes => boolean()}.
