@@ -12,6 +12,8 @@
 - Add `pgc_utils:quote_identifier/1`.
 - Add a `pgc_model` module providing a data model definition system making it
   easier to convert data business entities to database rows and vice versa.
+- Add a `log_backend_notices` client option (default: `true`) to control the
+  logging of notice messages sent by the server.
 ## Bugs
 - Fix query failure logging in `pgc:with_transaction/2`.
 - Fix response handling for empty statements.

@@ -37,7 +37,8 @@
                      database => unicode:chardata(),
                      application_name => unicode:chardata(),
                      types => pgc_types:type_set(),
-                     log_messages => boolean()}.
+                     log_messages => boolean(),
+                     log_backend_notices => boolean()}.
 
 -type state() :: #{options := options(),
                    socket => inet:socket(),
@@ -228,7 +229,7 @@ authenticate(State = #{options := Options}) ->
       log_backend_error(Error),
       {error, Error};
     {notice_response, Notice} ->
-      log_backend_notice(Notice),
+      log_backend_notice(Notice, Options),
       authenticate(State);
     authentication_cleartext_password ->
       case Password of
@@ -264,13 +265,13 @@ authenticate(State = #{options := Options}) ->
   end.
 
 -spec finish_startup(state()) -> {ok, state()} | {error, term()}.
-finish_startup(State) ->
+finish_startup(State = #{options := Options}) ->
   case recv_msg(State) of
     {error_response, Error} ->
       log_backend_error(Error),
       {error, Error};
     {notice_response, Notice} ->
-      log_backend_notice(Notice),
+      log_backend_notice(Notice, Options),
       finish_startup(State);
     {parameter_status, _, _} ->
       finish_startup(State);
@@ -294,7 +295,7 @@ send_simple_query(Query, State) ->
 
 -spec recv_simple_query_response(state(), pgc_proto:query_response()) ->
         {ok, Response :: map()} | {error, term()}.
-recv_simple_query_response(State, Response) ->
+recv_simple_query_response(State = #{options := Options}, Response) ->
   case recv_msg(State) of
     {error_response, Error} ->
       log_backend_error(Error),
@@ -302,7 +303,7 @@ recv_simple_query_response(State, Response) ->
       recv_simple_query_response(State, Response2),
       {error, Error};
     {notice_response, Notice} ->
-      log_backend_notice(Notice),
+      log_backend_notice(Notice, Options),
       recv_simple_query_response(State, Response);
     {parameter_status, _, _} ->
       recv_simple_query_response(State, Response);
@@ -354,7 +355,7 @@ send_extended_query(Query, Params, QueryOptions, State) ->
 
 -spec recv_extended_query_response(state(), pgc_proto:query_response()) ->
         {ok, Response :: map()} | {error, term()}.
-recv_extended_query_response(State, Response) ->
+recv_extended_query_response(State = #{options := Options}, Response) ->
   case recv_msg(State) of
     {error_response, Error} ->
       log_backend_error(Error),
@@ -362,7 +363,7 @@ recv_extended_query_response(State, Response) ->
       recv_simple_query_response(State, Response2),
       {error, Error};
     {notice_response, Notice} ->
-      log_backend_notice(Notice),
+      log_backend_notice(Notice, Options),
       recv_extended_query_response(State, Response);
     {parameter_status, _, _} ->
       recv_extended_query_response(State, Response);
@@ -425,11 +426,16 @@ recv_msg(State = #{options := Options}) ->
     ?LOG_DEBUG("received message ~p", [Msg]),
   Msg.
 
--spec log_backend_notice(pgc:notice()) -> ok.
-log_backend_notice(Notice) ->
-  #{code := Code, message := Message} = Notice,
-  ?LOG_NOTICE("backend notice (code ~s): ~s", [Code, Message]),
-  ok.
+-spec log_backend_notice(pgc:notice(), options()) -> ok.
+log_backend_notice(Notice, Options) ->
+  case maps:get(log_backend_notices, Options, true) of
+    true ->
+      #{code := Code, message := Message} = Notice,
+      ?LOG_NOTICE("backend notice (code ~s): ~s", [Code, Message]),
+      ok;
+    false ->
+      ok
+  end.
 
 -spec log_backend_error(pgc:error()) -> ok.
 log_backend_error(Error) ->
