@@ -428,11 +428,11 @@ recv_msg(State = #{options := Options}) ->
 -spec log_backend_notice(pgc:notice()) -> ok.
 log_backend_notice(Notice) ->
   #{code := Code, message := Message} = Notice,
-  ?LOG_NOTICE("backend notice ~s: ~s", [Code, Message]),
+  ?LOG_NOTICE("backend notice (code ~s): ~s", [Code, Message]),
   ok.
 
 -spec log_backend_error(pgc:error()) -> ok.
 log_backend_error(Error) ->
   #{code := Code, message := Message} = Error,
-  ?LOG_ERROR("backend error ~s: ~s", [Code, Message]),
+  ?LOG_ERROR("backend error (code ~s): ~s", [Code, Message]),
   ok.
