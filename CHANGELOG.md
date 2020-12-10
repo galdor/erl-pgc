@@ -2,7 +2,7 @@
 
 # Next Version
 ## Features
-- Introduce the `pgc:error/0` and `pgc:notice/0` type to avoid manipulating
+- Introduce the `pgc:error/0` and `pgc:notice/0` types to avoid manipulating
   the `pgc_proto:error_and_notice_fields()` type.
 - Add support for the `void` pseudo-type.
 - Add `pgc:simple_exec/2`.
