@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+
+# 1.4.0
 ## Features
 - Introduce the `pgc:error/0` and `pgc:notice/0` types to avoid manipulating
   the `pgc_proto:error_and_notice_fields()` type.
