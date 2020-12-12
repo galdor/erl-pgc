@@ -31,5 +31,5 @@ hash_md5_hex(Data) ->
 
 -spec binary_to_hex_string(binary()) -> binary().
 binary_to_hex_string(Bin) ->
-  HexData = [io_lib:format("~2.16.0B", [Byte]) || <<Byte:8>> <= Bin],
-  string:lowercase(iolist_to_binary(HexData)).
+  Data = [io_lib:format("~2.16.0b", [Byte]) || <<Byte:8>> <= Bin],
+  iolist_to_binary(Data).
