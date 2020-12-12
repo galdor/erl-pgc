@@ -17,6 +17,7 @@
 ## Bugs
 - Fix query failure logging in `pgc:with_transaction/2`.
 - Fix response handling for empty statements.
+- Fix the default application name.
 ## Misc
 - Query functions now return type decoding errors instead of signalling them
   with `error/1`.

@@ -213,7 +213,7 @@ tls_connect(State = #{options := Options, socket := Socket}) ->
 begin_startup(State = #{options := Options}) ->
   User = maps:get(user, Options),
   Database = maps:get(database, Options),
-  ApplicationName = maps:get(application_name, Options, <<"erl-pg">>),
+  ApplicationName = maps:get(application_name, Options, <<"erl-pgc">>),
   Parameters = #{user => User,
                  database => Database,
                  application_name => ApplicationName},
