@@ -20,7 +20,7 @@
                         Password :: unicode:chardata(),
                         Salt :: binary()) -> binary().
 hash_password_md5(User, Password, Salt) ->
-  Key = [User, Password],
+  Key = [Password, User],
   Data = [<<"md5">>, hash_md5_hex([hash_md5_hex([Key]), Salt])],
   iolist_to_binary(Data).
 
