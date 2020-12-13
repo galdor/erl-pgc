@@ -36,7 +36,7 @@
                      | #{type := pgc_types:type_name(),
                          column => column(),
                          encode => encode_fun(),
-                         decode => decode_fun}.
+                         decode => decode_fun()}.
 -type encode_fun() :: fun((term()) -> encoded_value()).
 -type decode_fun() :: fun((encoded_value()) -> term()).
 
