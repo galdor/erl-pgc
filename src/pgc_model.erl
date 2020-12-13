@@ -22,8 +22,10 @@
          placeholder_list/2,
          columns/1, columns/2, column/2]).
 
--export_type([model_name/0, model_table_name/0,
-              model/0, model_key/0, model_value/0, row/0, column/0, entity/0]).
+-export_type([model_ref/0, model_name/0, model_table_name/0,
+              model/0, model_key/0, model_value/0,
+              encode_fun/0, decode_fun/0, encoded_value/0,
+              row/0, column/0, entity/0]).
 
 -type model_ref() :: model_name() | model().
 

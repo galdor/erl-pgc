@@ -3,6 +3,8 @@
 # Next Version
 ## Bugs
 - Fix type specification for model values.
+## Misc
+- Export missing types for models.
 
 # 1.4.0
 ## Features
