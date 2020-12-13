@@ -29,6 +29,7 @@ types_test_() ->
     fun type_text/1,
     fun type_float/1,
     fun type_uuid/1,
+    fun type_json/1,
     fun type_jsonb/1,
     fun type_bit/1,
 
@@ -178,6 +179,12 @@ type_uuid(C) ->
                  query_row(C, "SELECT $1",
                            [{uuid, <<3,172,86,36,126,103,79,211,
                                      178,40,23,231,189,76,180,179>>}]))].
+
+type_json(C) ->
+  [?_assertEqual([<<"[1, 2, 3]">>],
+                 query_row(C, "SELECT '[1, 2, 3]'::json")),
+   ?_assertEqual([<<"[1, 2, 3]">>],
+                 query_row(C, "SELECT $1", [{json, <<"[1, 2, 3]">>}]))].
 
 type_jsonb(C) ->
   [?_assertEqual([<<"[1, 2, 3]">>],
