@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+
+# 1.4.1
 ## Bugs
 - Fix type specification for model values.
 ## Misc
