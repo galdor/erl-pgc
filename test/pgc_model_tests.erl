@@ -75,6 +75,18 @@ decode_test_() ->
    ?_assertEqual(#{f => 1606976482235},
                  Decode([{{2020, 12, 3}, {6, 21, 22, 235_000}}], Model, [f]))].
 
+decode_rows_test_() ->
+  Model = test_model(),
+  Decode = fun pgc_model:decode_rows/3,
+  [?_assertEqual([],
+                 Decode([], Model, [a, b])),
+   ?_assertEqual([#{a => 42, b => <<"foo">>}],
+                 Decode([[42, <<"foo">>]], Model, [a, b])),
+   ?_assertEqual([#{a => 42, b => <<"foo">>},
+                  #{a => 1, b => <<"bar">>}],
+                 Decode([[42, <<"foo">>], [1, <<"bar">>]],
+                        Model, [a, b]))].
+
 column_test_() ->
   Model = test_model(),
   ColumnName = fun (M, K) ->

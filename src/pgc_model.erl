@@ -16,6 +16,8 @@
 
 -export([encode/2, encode/3,
          decode/2, decode/3,
+         decode_row/2, decode_row/3,
+         decode_rows/2, decode_rows/3,
          column_tuple/1, column_tuple/2, column_csv/1, column_csv/2,
          placeholder_tuple/1, placeholder_tuple/2,
          placeholder_csv/1, placeholder_csv/2,
@@ -93,15 +95,35 @@ encode_timestamp(Datetime) ->
   {timestamp, pgc_utils:timestamp(Datetime)}.
 
 -spec decode(row(), model_ref()) -> entity().
-decode(Row, Model) when is_atom(Model) ->
-  decode(Row, pgc_model_registry:get_model(Model));
 decode(Row, Model) ->
-  decode(Row, Model, maps:keys(Model)).
+  decode_row(Row, Model).
 
 -spec decode(row(), model_ref(), [model_key()]) -> entity().
-decode(Row, Model, Keys) when is_atom(Model) ->
-  decode(Row, pgc_model_registry:get_model(Model), Keys);
 decode(Row, Model, Keys) ->
+  decode_row(Row, Model, Keys).
+
+-spec decode_rows([row()], model_ref()) -> [entity()].
+decode_rows(Rows, Model) when is_atom(Model) ->
+  decode_rows(Rows, pgc_model_registry:get_model(Model));
+decode_rows(Rows, Model) ->
+  decode_rows(Rows, Model, maps:keys(Model)).
+
+-spec decode_rows([row()], model_ref(), [model_key()]) -> [entity()].
+decode_rows(Rows, Model, Keys) when is_atom(Model) ->
+  decode_rows(Rows, pgc_model_registry:get_model(Model), Keys);
+decode_rows(Rows, Model, Keys) ->
+  lists:map(fun (Row) -> decode_row(Row, Model, Keys) end, Rows).
+
+-spec decode_row(row(), model_ref()) -> entity().
+decode_row(Row, Model) when is_atom(Model) ->
+  decode_row(Row, pgc_model_registry:get_model(Model));
+decode_row(Row, Model) ->
+  decode_row(Row, Model, maps:keys(Model)).
+
+-spec decode_row(row(), model_ref(), [model_key()]) -> entity().
+decode_row(Row, Model, Keys) when is_atom(Model) ->
+  decode_row(Row, pgc_model_registry:get_model(Model), Keys);
+decode_row(Row, Model, Keys) ->
   lists:foldl(fun ({Value, Key}, Entity) ->
                   case decode_fun(Model, Key) of
                     {ok, Decode} ->
