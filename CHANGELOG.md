@@ -4,6 +4,9 @@
 # Features
 - Add `pgc_model:decode_rows/2` and `pgc_model:decode_rows/3`.
 - Add `pgc_model:decode_row/2` and `pgc_model:decode_row/2` to keep names coherent.
+- Add `pgc_model:column_tuple/3`, `pgc_model:column_csv/3` to add a
+  correlation string to all column names. Add `pgc_model:columns/3` and
+  `pgc_model:column/3` for the same use case.
 
 # 1.4.1
 ## Bugs

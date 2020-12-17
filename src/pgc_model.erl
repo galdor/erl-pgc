@@ -19,11 +19,13 @@
          decode/2, decode/3,
          decode_row/2, decode_row/3,
          decode_rows/2, decode_rows/3,
-         column_tuple/1, column_tuple/2, column_csv/1, column_csv/2,
+         column_tuple/1, column_tuple/2, column_tuple/3,
+         column_csv/1, column_csv/2, column_csv/3,
          placeholder_tuple/1, placeholder_tuple/2,
          placeholder_csv/1, placeholder_csv/2,
          placeholder_list/2,
-         columns/1, columns/2, column/2]).
+         columns/1, columns/2, columns/3,
+         column/2, column/3]).
 
 -export_type([model_ref/0, model_name/0, model_table_name/0,
               model/0, model_key/0, model_keys/0, model_value/0,
@@ -161,6 +163,11 @@ column_tuple(ModelRef, Keys) ->
   Model = model(ModelRef),
   [$(, column_csv(Model, Keys), $)].
 
+-spec column_tuple(model_ref(), string(), model_keys()) -> unicode:chardata().
+column_tuple(ModelRef, Correlation, Keys) ->
+  Model = model(ModelRef),
+  [$(, column_csv(Model, Correlation, Keys), $)].
+
 -spec column_csv(model_ref()) -> unicode:chardata().
 column_csv(ModelRef) ->
   column_csv(model(ModelRef), all).
@@ -169,6 +176,15 @@ column_csv(ModelRef) ->
 column_csv(ModelRef, Keys) ->
   Model = model(ModelRef),
   Names = lists:map(fun (Key) -> column(Model, Key) end,
+                    model_keys(Model, Keys)),
+  lists:join($,, Names).
+
+-spec column_csv(model_ref(), string(), model_keys()) -> unicode:chardata().
+column_csv(ModelRef, Correlation, Keys) ->
+  Model = model(ModelRef),
+  Names = lists:map(fun (Key) ->
+                        [Correlation, $., column(Model, Key)]
+                    end,
                     model_keys(Model, Keys)),
   lists:join($,, Names).
 
@@ -182,16 +198,33 @@ columns(ModelRef, Keys) ->
   lists:map(fun (Key) -> column(Model, Key) end,
             model_keys(Model, Keys)).
 
+-spec columns(model_ref(), string(), model_keys()) -> [unicode:chardata()].
+columns(ModelRef, Correlation, Keys) ->
+  Model = model(ModelRef),
+  lists:map(fun (Key) -> column(Model, Correlation, Key) end,
+            model_keys(Model, Keys)).
+
 -spec column(model_ref(), model_key()) -> unicode:chardata().
 column(ModelRef, Key) ->
+  column(ModelRef, "", Key).
+
+-spec column(model_ref(), string(), model_key()) ->
+        unicode:chardata().
+column(ModelRef, Correlation, Key) ->
   Model = model(ModelRef),
-  Name = case maps:find(Key, Model) of
-           {ok, #{column := Column}} ->
-             Column;
-           {ok, _} ->
-             Key;
-           error ->
-             error({unknown_model_key, Key, Model})
+  Name0 = case maps:find(Key, Model) of
+            {ok, #{column := Column}} ->
+              Column;
+            {ok, _} ->
+              Key;
+            error ->
+              error({unknown_model_key, Key, Model})
+          end,
+  Name = case iolist_size(Correlation) of
+           0 ->
+             Name0;
+           _ ->
+             [Correlation, $., Name0]
          end,
   pgc_utils:quote_identifier(atom_to_binary(Name)).
 
