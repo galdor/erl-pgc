@@ -14,7 +14,8 @@
 
 -module(pgc_model).
 
--export([encode/2, encode/3,
+-export([model/1,
+         encode/2, encode/3,
          decode/2, decode/3,
          decode_row/2, decode_row/3,
          decode_rows/2, decode_rows/3,
@@ -51,17 +52,21 @@
 
 -type entity() :: #{atom() := term()}.
 
+-spec model(model_ref()) -> model().
+model(Ref) when is_atom(Ref) ->
+  pgc_model_registry:get_model(Ref);
+model(Model) ->
+  Model.
+
 -spec encode(entity(), model_ref()) -> [encoded_value()].
-encode(Entity, Model) when is_atom(Model) ->
-  encode(Entity, pgc_model_registry:get_model(Model));
-encode(Entity, Model) ->
+encode(Entity, ModelRef) ->
+  Model = model(ModelRef),
   encode(Entity, Model, maps:keys(Model)).
 
 -spec encode(entity(), model_ref(), [model_key()]) ->
         [encoded_value()].
-encode(Entity, Model, Keys) when is_atom(Model) ->
-  encode(Entity, pgc_model_registry:get_model(Model), Keys);
-encode(Entity, Model, Keys) ->
+encode(Entity, ModelRef, Keys) ->
+  Model = model(ModelRef),
   lists:map(fun (Key) ->
                 Value = case maps:find(Key, Entity) of
                           {ok, V} -> V;
@@ -95,35 +100,31 @@ encode_timestamp(Datetime) ->
   {timestamp, pgc_utils:timestamp(Datetime)}.
 
 -spec decode(row(), model_ref()) -> entity().
-decode(Row, Model) ->
-  decode_row(Row, Model).
+decode(Row, ModelRef) ->
+  decode_row(Row, ModelRef).
 
 -spec decode(row(), model_ref(), [model_key()]) -> entity().
-decode(Row, Model, Keys) ->
-  decode_row(Row, Model, Keys).
+decode(Row, ModelRef, Keys) ->
+  decode_row(Row, ModelRef, Keys).
 
 -spec decode_rows([row()], model_ref()) -> [entity()].
-decode_rows(Rows, Model) when is_atom(Model) ->
-  decode_rows(Rows, pgc_model_registry:get_model(Model));
-decode_rows(Rows, Model) ->
+decode_rows(Rows, ModelRef) ->
+  Model = model(ModelRef),
   decode_rows(Rows, Model, maps:keys(Model)).
 
 -spec decode_rows([row()], model_ref(), [model_key()]) -> [entity()].
-decode_rows(Rows, Model, Keys) when is_atom(Model) ->
-  decode_rows(Rows, pgc_model_registry:get_model(Model), Keys);
-decode_rows(Rows, Model, Keys) ->
+decode_rows(Rows, ModelRef, Keys) ->
+  Model = model(ModelRef),
   lists:map(fun (Row) -> decode_row(Row, Model, Keys) end, Rows).
 
 -spec decode_row(row(), model_ref()) -> entity().
-decode_row(Row, Model) when is_atom(Model) ->
-  decode_row(Row, pgc_model_registry:get_model(Model));
-decode_row(Row, Model) ->
+decode_row(Row, ModelRef) ->
+  Model = model(ModelRef),
   decode_row(Row, Model, maps:keys(Model)).
 
 -spec decode_row(row(), model_ref(), [model_key()]) -> entity().
-decode_row(Row, Model, Keys) when is_atom(Model) ->
-  decode_row(Row, pgc_model_registry:get_model(Model), Keys);
-decode_row(Row, Model, Keys) ->
+decode_row(Row, ModelRef, Keys) ->
+  Model = model(ModelRef),
   lists:foldl(fun ({Value, Key}, Entity) ->
                   case decode_fun(Model, Key) of
                     {ok, Decode} ->
@@ -148,46 +149,39 @@ decode_field(Value, _) ->
   Value.
 
 -spec column_tuple(model_ref()) -> unicode:chardata().
-column_tuple(Model) when is_atom(Model) ->
-  column_tuple(pgc_model_registry:get_model(Model));
-column_tuple(Model) ->
+column_tuple(ModelRef) ->
+  Model = model(ModelRef),
   column_tuple(Model, maps:keys(Model)).
 
 -spec column_tuple(model_ref(), [model_key()]) -> unicode:chardata().
-column_tuple(Model, Keys) when is_atom(Model) ->
-  column_tuple(pgc_model_registry:get_model(Model), Keys);
-column_tuple(Model, Keys) ->
+column_tuple(ModelRef, Keys) ->
+  Model = model(ModelRef),
   [$(, column_csv(Model, Keys), $)].
 
 -spec column_csv(model_ref()) -> unicode:chardata().
-column_csv(Model) when is_atom(Model) ->
-  column_csv(pgc_model_registry:get_model(Model));
-column_csv(Model) ->
+column_csv(ModelRef) ->
+  Model = model(ModelRef),
   column_csv(Model, maps:keys(Model)).
 
 -spec column_csv(model_ref(), [model_key()]) -> unicode:chardata().
-column_csv(Model, Keys) when is_atom(Model) ->
-  column_csv(pgc_model_registry:get_model(Model), Keys);
-column_csv(Model, Keys) ->
+column_csv(ModelRef, Keys) ->
+  Model = model(ModelRef),
   Names = lists:map(fun (Key) -> column(Model, Key) end, Keys),
   lists:join($,, Names).
 
 -spec columns(model_ref()) -> [unicode:chardata()].
-columns(Model) when is_atom(Model) ->
-  columns(pgc_model_registry:get_model(Model));
-columns(Model) ->
+columns(ModelRef) ->
+  Model = model(ModelRef),
   columns(Model, maps:keys(Model)).
 
 -spec columns(model_ref(), [model_key()]) -> [unicode:chardata()].
-columns(Model, Keys) when is_atom(Model) ->
-  columns(pgc_model_registry:get_model(Model), Keys);
-columns(Model, Keys) ->
+columns(ModelRef, Keys) ->
+  Model = model(ModelRef),
   lists:map(fun (Key) -> column(Model, Key) end, Keys).
 
 -spec column(model_ref(), model_key()) -> unicode:chardata().
-column(Model, Key) when is_atom(Model) ->
-  column(pgc_model_registry:get_model(Model), Key);
-column(Model, Key) ->
+column(ModelRef, Key) ->
+  Model = model(ModelRef),
   Name = case maps:find(Key, Model) of
            {ok, #{column := Column}} ->
              Column;
@@ -199,26 +193,21 @@ column(Model, Key) ->
   pgc_utils:quote_identifier(atom_to_binary(Name)).
 
 -spec placeholder_tuple(model_ref()) -> unicode:chardata().
-placeholder_tuple(Model) when is_atom(Model) ->
-  placeholder_tuple(pgc_model_registry:get_model(Model));
-placeholder_tuple(Model) ->
+placeholder_tuple(ModelRef) ->
+  Model = model(ModelRef),
   placeholder_tuple(Model, maps:keys(Model)).
 
 -spec placeholder_tuple(model_ref(), [model_key()]) -> unicode:chardata().
-placeholder_tuple(Model, Keys) when is_atom(Model) ->
-  placeholder_tuple(pgc_model_registry:get_model(Model), Keys);
-placeholder_tuple(Model, Keys) ->
+placeholder_tuple(ModelRef, Keys) ->
+  Model = model(ModelRef),
   [$(, placeholder_csv(Model, Keys), $)].
 
 -spec placeholder_csv(model_ref()) -> unicode:chardata().
-placeholder_csv(Model) when is_atom(Model) ->
-  placeholder_csv(pgc_model_registry:get_model(Model));
-placeholder_csv(Model) ->
+placeholder_csv(ModelRef) ->
+  Model = model(ModelRef),
   placeholder_csv(Model, maps:keys(Model)).
 
 -spec placeholder_csv(model_ref(), [model_key()]) -> unicode:chardata().
-placeholder_csv(Model, Keys) when is_atom(Model) ->
-  placeholder_csv(pgc_model_registry:get_model(Model), Keys);
 placeholder_csv(_, Keys) ->
   lists:join($,, placeholder_list(1, length(Keys))).
 
