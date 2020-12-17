@@ -26,7 +26,7 @@
          columns/1, columns/2, column/2]).
 
 -export_type([model_ref/0, model_name/0, model_table_name/0,
-              model/0, model_key/0, model_value/0,
+              model/0, model_key/0, model_keys/0, model_value/0,
               encode_fun/0, decode_fun/0, encoded_value/0,
               row/0, column/0, entity/0]).
 
@@ -37,6 +37,7 @@
 
 -type model() :: #{model_key() := model_value()}.
 -type model_key() :: atom().
+-type model_keys() :: [model_key()] | all.
 -type model_value() :: pgc_types:type_name()
                      | #{type := pgc_types:type_name(),
                          column => column(),
@@ -58,12 +59,17 @@ model(Ref) when is_atom(Ref) ->
 model(Model) ->
   Model.
 
+-spec model_keys(model(), model_keys()) -> [model_key()].
+model_keys(Model, all) ->
+  maps:keys(Model);
+model_keys(_Model, Keys) ->
+  Keys.
+
 -spec encode(entity(), model_ref()) -> [encoded_value()].
 encode(Entity, ModelRef) ->
-  Model = model(ModelRef),
-  encode(Entity, Model, maps:keys(Model)).
+  encode(Entity, model(ModelRef), all).
 
--spec encode(entity(), model_ref(), [model_key()]) ->
+-spec encode(entity(), model_ref(), model_keys()) ->
         [encoded_value()].
 encode(Entity, ModelRef, Keys) ->
   Model = model(ModelRef),
@@ -73,7 +79,7 @@ encode(Entity, ModelRef, Keys) ->
                           error -> null
                         end,
                 encode_value(Value, Model, Key)
-            end, Keys).
+            end, model_keys(Model, Keys)).
 
 -spec encode_value(term(), model(), model_key()) -> encoded_value().
 encode_value(Value, Model, Key) ->
@@ -103,26 +109,24 @@ encode_timestamp(Datetime) ->
 decode(Row, ModelRef) ->
   decode_row(Row, ModelRef).
 
--spec decode(row(), model_ref(), [model_key()]) -> entity().
+-spec decode(row(), model_ref(), model_keys()) -> entity().
 decode(Row, ModelRef, Keys) ->
   decode_row(Row, ModelRef, Keys).
 
 -spec decode_rows([row()], model_ref()) -> [entity()].
 decode_rows(Rows, ModelRef) ->
-  Model = model(ModelRef),
-  decode_rows(Rows, Model, maps:keys(Model)).
+  decode_rows(Rows, model(ModelRef), all).
 
--spec decode_rows([row()], model_ref(), [model_key()]) -> [entity()].
+-spec decode_rows([row()], model_ref(), model_keys()) -> [entity()].
 decode_rows(Rows, ModelRef, Keys) ->
   Model = model(ModelRef),
   lists:map(fun (Row) -> decode_row(Row, Model, Keys) end, Rows).
 
 -spec decode_row(row(), model_ref()) -> entity().
 decode_row(Row, ModelRef) ->
-  Model = model(ModelRef),
-  decode_row(Row, Model, maps:keys(Model)).
+  decode_row(Row, model(ModelRef), all).
 
--spec decode_row(row(), model_ref(), [model_key()]) -> entity().
+-spec decode_row(row(), model_ref(), model_keys()) -> entity().
 decode_row(Row, ModelRef, Keys) ->
   Model = model(ModelRef),
   lists:foldl(fun ({Value, Key}, Entity) ->
@@ -138,7 +142,7 @@ decode_row(Row, ModelRef, Keys) ->
                           Entity#{Key => DecodedValue}
                       end
                   end
-              end, #{}, lists:zip(Row, Keys)).
+              end, #{}, lists:zip(Row, model_keys(Model, Keys))).
 
 -spec decode_field(term(), pgc_types:type_name()) -> term().
 decode_field(Value, time) ->
@@ -150,34 +154,33 @@ decode_field(Value, _) ->
 
 -spec column_tuple(model_ref()) -> unicode:chardata().
 column_tuple(ModelRef) ->
-  Model = model(ModelRef),
-  column_tuple(Model, maps:keys(Model)).
+  column_tuple(model(ModelRef), all).
 
--spec column_tuple(model_ref(), [model_key()]) -> unicode:chardata().
+-spec column_tuple(model_ref(), model_keys()) -> unicode:chardata().
 column_tuple(ModelRef, Keys) ->
   Model = model(ModelRef),
   [$(, column_csv(Model, Keys), $)].
 
 -spec column_csv(model_ref()) -> unicode:chardata().
 column_csv(ModelRef) ->
-  Model = model(ModelRef),
-  column_csv(Model, maps:keys(Model)).
+  column_csv(model(ModelRef), all).
 
--spec column_csv(model_ref(), [model_key()]) -> unicode:chardata().
+-spec column_csv(model_ref(), model_keys()) -> unicode:chardata().
 column_csv(ModelRef, Keys) ->
   Model = model(ModelRef),
-  Names = lists:map(fun (Key) -> column(Model, Key) end, Keys),
+  Names = lists:map(fun (Key) -> column(Model, Key) end,
+                    model_keys(Model, Keys)),
   lists:join($,, Names).
 
 -spec columns(model_ref()) -> [unicode:chardata()].
 columns(ModelRef) ->
-  Model = model(ModelRef),
-  columns(Model, maps:keys(Model)).
+  columns(model(ModelRef), all).
 
--spec columns(model_ref(), [model_key()]) -> [unicode:chardata()].
+-spec columns(model_ref(), model_keys()) -> [unicode:chardata()].
 columns(ModelRef, Keys) ->
   Model = model(ModelRef),
-  lists:map(fun (Key) -> column(Model, Key) end, Keys).
+  lists:map(fun (Key) -> column(Model, Key) end,
+            model_keys(Model, Keys)).
 
 -spec column(model_ref(), model_key()) -> unicode:chardata().
 column(ModelRef, Key) ->
@@ -194,22 +197,20 @@ column(ModelRef, Key) ->
 
 -spec placeholder_tuple(model_ref()) -> unicode:chardata().
 placeholder_tuple(ModelRef) ->
-  Model = model(ModelRef),
-  placeholder_tuple(Model, maps:keys(Model)).
+  placeholder_tuple(model(ModelRef), all).
 
--spec placeholder_tuple(model_ref(), [model_key()]) -> unicode:chardata().
+-spec placeholder_tuple(model_ref(), model_keys()) -> unicode:chardata().
 placeholder_tuple(ModelRef, Keys) ->
   Model = model(ModelRef),
   [$(, placeholder_csv(Model, Keys), $)].
 
 -spec placeholder_csv(model_ref()) -> unicode:chardata().
 placeholder_csv(ModelRef) ->
-  Model = model(ModelRef),
-  placeholder_csv(Model, maps:keys(Model)).
+  placeholder_csv(model(ModelRef), all).
 
--spec placeholder_csv(model_ref(), [model_key()]) -> unicode:chardata().
-placeholder_csv(_, Keys) ->
-  lists:join($,, placeholder_list(1, length(Keys))).
+-spec placeholder_csv(model_ref(), model_keys()) -> unicode:chardata().
+placeholder_csv(Model, Keys) ->
+  lists:join($,, placeholder_list(1, length(model_keys(Model, Keys)))).
 
 -spec placeholder_list(Min :: pos_integer(), Max :: pos_integer()) ->
         [binary()].
