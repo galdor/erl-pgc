@@ -182,9 +182,7 @@ column_csv(ModelRef, Keys) ->
 -spec column_csv(model_ref(), string(), model_keys()) -> unicode:chardata().
 column_csv(ModelRef, Correlation, Keys) ->
   Model = model(ModelRef),
-  Names = lists:map(fun (Key) ->
-                        [Correlation, $., column(Model, Key)]
-                    end,
+  Names = lists:map(fun (Key) -> column(Model, Correlation, Key) end,
                     model_keys(Model, Keys)),
   lists:join($,, Names).
 
@@ -220,13 +218,12 @@ column(ModelRef, Correlation, Key) ->
             error ->
               error({unknown_model_key, Key, Model})
           end,
-  Name = case iolist_size(Correlation) of
-           0 ->
-             Name0;
-           _ ->
-             [Correlation, $., Name0]
-         end,
-  pgc_utils:quote_identifier(atom_to_binary(Name)).
+  case iolist_size(Correlation) of
+    0 ->
+      quote_identifier(Name0);
+    _ ->
+      [quote_identifier(Correlation), $., quote_identifier(Name0)]
+  end.
 
 -spec placeholder_tuple(model_ref()) -> unicode:chardata().
 placeholder_tuple(ModelRef) ->
@@ -281,4 +278,17 @@ decode_fun(Model, Key) ->
       error;
     error ->
       error({unknown_model_key, Key, Model})
+  end.
+
+-spec quote_identifier(unicode:chardata() | atom()) -> binary().
+quote_identifier(Id) when is_atom(Id) ->
+  quote_identifier(atom_to_binary(Id));
+quote_identifier(Id) when is_binary(Id) ->
+  pgc_utils:quote_identifier(Id);
+quote_identifier(Id) ->
+  case unicode:characters_to_binary(Id) of
+    Bin when is_binary(Bin) ->
+      quote_identifier(Bin);
+    _ ->
+      error({invalid_identifier, Id})
   end.
