@@ -7,6 +7,7 @@
 - Add `pgc_model:column_tuple/3`, `pgc_model:column_csv/3` to add a
   correlation string to all column names. Add `pgc_model:columns/3` and
   `pgc_model:column/3` for the same use case.
+- Add default values to models.
 
 # 1.4.1
 ## Bugs

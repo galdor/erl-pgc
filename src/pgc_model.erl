@@ -43,6 +43,7 @@
 -type model_value() :: pgc_types:type_name()
                      | #{type := pgc_types:type_name(),
                          column => column(),
+                         default => term(),
                          encode => encode_fun(),
                          decode => decode_fun()}.
 -type encode_fun() :: fun((term()) -> encoded_value()).
@@ -75,13 +76,16 @@ encode(Entity, ModelRef) ->
         [encoded_value()].
 encode(Entity, ModelRef, Keys) ->
   Model = model(ModelRef),
-  lists:map(fun (Key) ->
-                Value = case maps:find(Key, Entity) of
-                          {ok, V} -> V;
-                          error -> null
-                        end,
-                encode_value(Value, Model, Key)
-            end, model_keys(Model, Keys)).
+  F = fun (Key) ->
+          Value = case maps:find(Key, Entity) of
+                    {ok, V} ->
+                      V;
+                    error ->
+                      default(Model, Key)
+                  end,
+          encode_value(Value, Model, Key)
+      end,
+  lists:map(F, model_keys(Model, Keys)).
 
 -spec encode_value(term(), model(), model_key()) -> encoded_value().
 encode_value(Value, Model, Key) ->
@@ -131,20 +135,27 @@ decode_row(Row, ModelRef) ->
 -spec decode_row(row(), model_ref(), model_keys()) -> entity().
 decode_row(Row, ModelRef, Keys) ->
   Model = model(ModelRef),
-  lists:foldl(fun ({Value, Key}, Entity) ->
-                  case decode_fun(Model, Key) of
-                    {ok, Decode} ->
-                      Entity#{Key => Decode(Value)};
-                    error ->
-                      case {Value, type(Model, Key)} of
-                        {null, _} ->
-                          Entity;
-                        {_, TypeName} ->
-                          DecodedValue = decode_field(Value, TypeName),
-                          Entity#{Key => DecodedValue}
-                      end
-                  end
-              end, #{}, lists:zip(Row, model_keys(Model, Keys))).
+  F = fun ({Value0, Key}, Entity) ->
+          Value = case Value0 of
+                    null ->
+                      default(Model, Key);
+                    _ ->
+                      Value0
+                  end,
+          case decode_fun(Model, Key) of
+            {ok, Decode} ->
+              Entity#{Key => Decode(Value)};
+            error ->
+              case {Value, type(Model, Key)} of
+                {null, _} ->
+                  Entity;
+                {_, TypeName} ->
+                  DecodedValue = decode_field(Value, TypeName),
+                  Entity#{Key => DecodedValue}
+              end
+          end
+      end,
+  lists:foldl(F, #{}, lists:zip(Row, model_keys(Model, Keys))).
 
 -spec decode_field(term(), pgc_types:type_name()) -> term().
 decode_field(Value, time) ->
@@ -254,6 +265,17 @@ type(Model, Key) ->
       Type;
     {ok, Type} when is_atom(Type); is_tuple(Type) ->
       Type;
+    error ->
+      error({unknown_model_key, Key, Model})
+  end.
+
+-spec default(model(), model_key()) -> term().
+default(Model, Key) ->
+  case maps:find(Key, Model) of
+    {ok, #{default := Default}} ->
+      Default;
+    {ok, _} ->
+      null;
     error ->
       error({unknown_model_key, Key, Model})
   end.

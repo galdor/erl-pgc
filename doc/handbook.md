@@ -150,6 +150,7 @@ entries:
 - `type`: the database type used to represent the value in the database.
 - `column`: the name of the database column as an atom (optional, the default
   value being the key of the entry).
+- `default`: an Erlang term used when a database value is null.
 - `encode`: a custom encoding function which transforms an Erlang term into a
   typed pgc value of the form `{Type, Value}`.
 - `decode`: a custom decoding function which transforms a pgc value into an
@@ -159,7 +160,8 @@ Example:
 ```erlang
 #{id => int4,
   name => #{type => text, column => user_name},
-  group_ids => {array, int4}}
+  group_ids => {array, int4},
+  disabled => #{type => boolean, default => false}}
 ```
 
 ## Model registry

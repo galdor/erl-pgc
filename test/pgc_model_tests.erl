@@ -25,7 +25,8 @@ test_model() ->
     e => #{type => timestamp, column => '"foo"'},
     f => #{type => timestamp,
            encode => fun encode_ms_system_time/1,
-           decode => fun decode_ms_system_time/1}}.
+           decode => fun decode_ms_system_time/1},
+    g => #{type => boolean, default => false}}.
 
 -spec encode_ms_system_time(integer()) -> {timestamp, pgc:timestamp()}.
 encode_ms_system_time(SysTime) ->
@@ -58,7 +59,13 @@ encode_test_() ->
                           e => {{2020, 10, 10}, {10, 20, 30}}},
                         Model, [d, e])),
    ?_assertEqual([{timestamp, {{2020, 12, 3}, {6, 21, 22, 235_000}}}],
-                 Encode(#{f => 1606976482235}, Model, [f]))].
+                 Encode(#{f => 1606976482235}, Model, [f])),
+   ?_assertEqual([{boolean, true}],
+                 Encode(#{g => true}, Model, [g])),
+   ?_assertEqual([{boolean, false}],
+                 Encode(#{g => false}, Model, [g])),
+   ?_assertEqual([{boolean, false}],
+                 Encode(#{}, Model, [g]))].
 
 decode_test_() ->
   Model = test_model(),
@@ -73,7 +80,13 @@ decode_test_() ->
                  Decode([{2020, 10, 5}, {{2020, 10, 10}, {10, 20, 30, 0}}],
                         Model, [d, e])),
    ?_assertEqual(#{f => 1606976482235},
-                 Decode([{{2020, 12, 3}, {6, 21, 22, 235_000}}], Model, [f]))].
+                 Decode([{{2020, 12, 3}, {6, 21, 22, 235_000}}], Model, [f])),
+   ?_assertEqual(#{g => true},
+                 Decode([true], Model, [g])),
+   ?_assertEqual(#{g => false},
+                 Decode([false], Model, [g])),
+   ?_assertEqual(#{g => false},
+                 Decode([null], Model, [g]))].
 
 decode_rows_test_() ->
   Model = test_model(),
