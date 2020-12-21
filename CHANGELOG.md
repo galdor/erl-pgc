@@ -8,6 +8,8 @@
   correlation string to all column names. Add `pgc_model:columns/3` and
   `pgc_model:column/3` for the same use case.
 - Add default values to models.
+# Misc
+- Do not pass null values to custom encoding and decoding functions in models.
 
 # 1.4.1
 ## Bugs

@@ -88,6 +88,8 @@ encode(Entity, ModelRef, Keys) ->
   lists:map(F, model_keys(Model, Keys)).
 
 -spec encode_value(term(), model(), model_key()) -> encoded_value().
+encode_value(null, Model, Key) ->
+  {type(Model, Key), null};
 encode_value(Value, Model, Key) ->
   case encode_fun(Model, Key) of
     {ok, Encode} ->
@@ -142,14 +144,14 @@ decode_row(Row, ModelRef, Keys) ->
                     _ ->
                       Value0
                   end,
-          case decode_fun(Model, Key) of
-            {ok, Decode} ->
-              Entity#{Key => Decode(Value)};
-            error ->
-              case {Value, type(Model, Key)} of
-                {null, _} ->
-                  Entity;
-                {_, TypeName} ->
+          case {Value, type(Model, Key)} of
+            {null, _} ->
+              Entity;
+            {_, TypeName} ->
+              case decode_fun(Model, Key) of
+                {ok, Decode} ->
+                  Entity#{Key => Decode(Value)};
+                error ->
                   DecodedValue = decode_field(Value, TypeName),
                   Entity#{Key => DecodedValue}
               end
