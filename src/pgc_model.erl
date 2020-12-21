@@ -47,7 +47,7 @@
                          encode => encode_fun(),
                          decode => decode_fun()}.
 -type encode_fun() :: fun((term()) -> encoded_value()).
--type decode_fun() :: fun((encoded_value()) -> term()).
+-type decode_fun() :: fun((term()) -> term()).
 
 -type encoded_value() :: {pgc_types:type_name(), term()}.
 
