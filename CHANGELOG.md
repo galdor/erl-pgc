@@ -10,6 +10,7 @@
 - Add default values to models.
 # Bugs
 - Fix handling of unknown `gen_server` calls.
+- Delete the model registry ETS table during shutdown.
 ## Misc
 - Do not pass null values to custom encoding and decoding functions in models.
 

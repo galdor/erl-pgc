@@ -66,6 +66,7 @@ init([]) ->
   {ok, State}.
 
 terminate(_Reason, _State) ->
+  ets:delete(?MODULE),
   ok.
 
 handle_call({register_model, Name, Model}, _From, State) ->
