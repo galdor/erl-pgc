@@ -503,6 +503,38 @@ custom_types_test_() ->
                       query_row(C, "SELECT '', 'hello', 'world'"))]
    end}.
 
+enum_test_() ->
+  {setup,
+   fun () ->
+       C = pgc_tests:start_client(),
+       {ok, _} = pgc:exec(C, "DROP TYPE IF EXISTS E1"),
+       {ok, _} = pgc:exec(C, "CREATE TYPE E1 AS ENUM ('foo', 'bar')"),
+       ok = pgc_client:reload_types(C),
+       C
+   end,
+   fun (C) ->
+       {ok, _} = pgc:exec(C, "DROP TYPE E1"),
+       pgc_tests:stop_client(C)
+   end,
+   fun (C) ->
+       [?_assertEqual([foo],
+                      query_row(C, "SELECT 'foo'::E1")),
+        ?_assertEqual([foo],
+                      query_row(C, "SELECT $1::E1", [<<"foo">>])),
+        ?_assertEqual([foo],
+                      query_row(C, "SELECT $1::E1", [{text, <<"foo">>}])),
+        ?_assertEqual([foo],
+                      query_row(C, "SELECT $1", [{{enum, e1}, foo}])),
+        ?_assertEqual([foo],
+                      query_row(C, "SELECT $1", [{{enum, e1}, <<"foo">>}])),
+        ?_assertEqual([[foo, bar, foo]],
+                      query_row(C, "SELECT $1",
+                                [{{array, {enum, e1}}, [foo, bar, foo]}])),
+        ?_assertEqual([[foo, bar]],
+                      query_row(C, "SELECT $1::E1[]",
+                                [{{array, text}, [<<"foo">>, <<"bar">>]}]))]
+   end}.
+
 -spec query_row(pgc_client:ref(), unicode:chardata()) -> [term()].
 query_row(Client, Query) ->
   query_row(Client, Query, []).

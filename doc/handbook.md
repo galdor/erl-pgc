@@ -119,6 +119,17 @@ represented by nested Erlang lists. The type name of an array is `{array,
 ElementType}`. For example, an array of 4 byte integers has the type `{array,
 int4}`. Note that there is no such things as arrays of arrays.
 
+## Enums
+Enums are represented by Erlang atoms. The type name of an enum value is
+`{enum, Name}`, where `Name` is an atom whose value is the name of the enum
+type in PostgreSQL. Note that while PostgreSQL type names are case
+insensitive, the `pg_type` table will use lower-case characters; therefore pgc
+enum types are also lower-case atoms.
+
+Clients automatically discover PostgreSQL enum types during initialization. If
+a client execute queries which create new enum types, it should take care to
+call `pgc_client:refresh_types/1` to reload the type table.
+
 ## Floating point values
 Erlang does not support `NaN`, `+Infinity` and `-Infinity`. Therefore we
 introduce `pgc:float_value()` which extends `float()` with `nan`,

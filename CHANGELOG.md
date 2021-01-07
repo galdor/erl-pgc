@@ -8,6 +8,7 @@
   correlation string to all column names. Add `pgc_model:columns/3` and
   `pgc_model:column/3` for the same use case.
 - Add default values to models.
+- Add support for enum values.
 # Bugs
 - Fix handling of unknown `gen_server` calls.
 - Delete the model registry ETS table during shutdown.

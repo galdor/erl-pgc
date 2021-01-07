@@ -19,7 +19,8 @@
 -behaviour(gen_server).
 
 -export([start_link/0, start_link/1, start_link/2, stop/1,
-         simple_exec/2, exec/2, exec/3, exec/4, query/2, query/3, query/4]).
+         simple_exec/2, exec/2, exec/3, exec/4, query/2, query/3, query/4,
+         reload_types/1]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
 -export_type([name/0, ref/0, options/0]).
@@ -41,6 +42,7 @@
                      log_backend_notices => boolean()}.
 
 -type state() :: #{options := options(),
+                   types := pgc_types:type_set(),
                    socket => inet:socket(),
                    ssl_socket => ssl:sslsocket()}.
 
@@ -110,15 +112,21 @@ query(Ref, Query, Params) ->
 query(Ref, Query, Params, Options) ->
   gen_server:call(Ref, {extended_query, Query, Params, Options}, infinity).
 
+-spec reload_types(ref()) -> ok | {error, term()}.
+reload_types(Ref) ->
+  gen_server:call(Ref, reload_types, infinity).
+
 init([Options]) ->
   logger:update_process_metadata(#{domain => [pgc, client]}),
   validate_options(Options),
-  State = #{options => Options},
+  State = #{options => Options,
+            types => maps:get(types, Options, [])},
   Steps = [fun connect/1,
            fun maybe_tls_connect/1,
            fun begin_startup/1,
            fun authenticate/1,
-           fun finish_startup/1],
+           fun finish_startup/1,
+           fun load_enum_types/1],
   Res = lists:foldl(fun (Step, {ok, State1}) ->
                         Step(State1);
                         (_, {error, Reason}) ->
@@ -146,6 +154,15 @@ handle_call({simple_query, Query}, _From, State) ->
 handle_call({extended_query, Query, Params, Options}, _From, State) ->
   Result = send_extended_query(Query, Params, Options, State),
   {reply, Result, State};
+
+handle_call(reload_types, _From, State = #{options := Options}) ->
+  Types = maps:get(types, Options, []),
+  case load_enum_types(State#{types => Types}) of
+    {ok, State2} ->
+      {reply, ok, State2};
+    {error, Reason} ->
+      {reply, {error, Reason}, State}
+  end;
 
 handle_call(Msg, From, State) ->
   ?LOG_WARNING("unhandled call ~p from ~p", [Msg, From]),
@@ -283,6 +300,27 @@ finish_startup(State = #{options := Options}) ->
       {error, {unexpected_msg, Msg}}
   end.
 
+-spec load_enum_types(state()) -> {ok, state()} | {error, term()}.
+load_enum_types(State = #{types := Types}) ->
+  Query = ["SELECT typname, oid, typarray",
+           "  FROM pg_type",
+           "  WHERE typtype = 'e'"],
+  F = fun ([NameString, Oid, ArrayOid], Acc) ->
+          Name = binary_to_atom(NameString),
+          TypeName = {enum, Name},
+          EnumType = {TypeName, Oid, {pgc_codec_enum, [Name]}},
+          ArrayType = {{array, TypeName}, ArrayOid,
+                       {pgc_codec_array, [TypeName]}},
+          [EnumType | [ArrayType | Acc]]
+      end,
+  case send_extended_query(Query, [], #{}, State) of
+    {ok, _, Rows, _} ->
+      EnumTypes = lists:foldl(F, [], Rows),
+      {ok, State#{types => EnumTypes ++ Types}};
+    {error, Error} ->
+      {error, Error}
+  end.
+
 -spec send_simple_query(Query :: iodata(), state()) -> pgc:exec_result().
 send_simple_query(Query, State) ->
   send(pgc_proto:encode_query_msg(Query), State),
@@ -336,9 +374,7 @@ recv_simple_query_response(State = #{options := Options}, Response) ->
 -spec send_extended_query(Query :: iodata(), Params :: [term()],
                           pgc:query_options(), state()) ->
         pgc:query_result().
-send_extended_query(Query, Params, QueryOptions, State) ->
-  #{options := Options} = State,
-  Types = maps:get(types, Options, pgc_types:empty_type_set()),
+send_extended_query(Query, Params, QueryOptions, State = #{types := Types}) ->
   {EncodedParams, ParamTypeOids} = pgc_types:encode_values(Params, Types),
   send([pgc_proto:encode_parse_msg(<<>>, Query, ParamTypeOids),
         pgc_proto:encode_bind_msg(<<>>, <<>>, EncodedParams),

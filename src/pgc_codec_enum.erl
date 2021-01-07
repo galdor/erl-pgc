@@ -12,28 +12,20 @@
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 %% IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
--module(pgc_tests).
+-module(pgc_codec_enum).
 
--export([client_options/0,
-         start_client/0, start_client/1, stop_client/1]).
+-behaviour(pgc_codec).
 
--spec client_options() -> pgc_client:options().
-client_options() ->
-  #{user => "pgc",
-    password => "pgc",
-    database => "pgc",
-    log_backend_notices => false}.
+-export([encode/4, decode/4]).
 
--spec start_client() -> pgc_client:ref().
-start_client() ->
-  start_client(client_options()).
+-spec encode(atom() | binary(), pgc_types:type(),
+             pgc_types:type_set(), list()) -> binary().
+encode(Value, _, _, [_EnumName]) when is_atom(Value)->
+  atom_to_binary(Value);
+encode(Value, _, _, [_EnumName]) when is_binary(Value) ->
+  Value.
 
--spec start_client(pgc_client:options()) -> pgc_client:ref().
-start_client(Options) ->
-  Options2 = maps:merge(client_options(), Options),
-  {ok, Client} = pgc_client:start_link(Options2),
-  Client.
-
--spec stop_client(pgc_client:ref()) -> ok.
-stop_client(Client) ->
-  pgc_client:stop(Client).
+-spec decode(binary(), pgc_types:type(), pgc_types:type_set(), list()) ->
+        unicode:chardata().
+decode(Bin, _, _, [_EnumName]) ->
+  binary_to_atom(Bin).
