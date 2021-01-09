@@ -126,13 +126,14 @@ init([Options]) ->
            fun begin_startup/1,
            fun authenticate/1,
            fun finish_startup/1,
-           fun load_enum_types/1],
-  Res = lists:foldl(fun (Step, {ok, State1}) ->
-                        Step(State1);
-                        (_, {error, Reason}) ->
-                        {error, Reason}
-                    end, {ok, State}, Steps),
-  case Res of
+           fun load_types/1],
+  F = fun
+        (Step, {ok, State1}) ->
+          Step(State1);
+        (_, {error, Reason}) ->
+          {error, Reason}
+      end,
+  case lists:foldl(F, {ok, State}, Steps) of
     {ok, State2} ->
       {ok, State2};
     {error, Reason} ->
@@ -157,7 +158,7 @@ handle_call({extended_query, Query, Params, Options}, _From, State) ->
 
 handle_call(reload_types, _From, State = #{options := Options}) ->
   Types = maps:get(types, Options, []),
-  case load_enum_types(State#{types => Types}) of
+  case load_types(State#{types => Types}) of
     {ok, State2} ->
       {reply, ok, State2};
     {error, Reason} ->
@@ -300,6 +301,17 @@ finish_startup(State = #{options := Options}) ->
       {error, {unexpected_msg, Msg}}
   end.
 
+-spec load_types(state()) -> {ok, state()} | {error, term()}.
+load_types(State) ->
+  Steps = [fun load_enum_types/1,
+           fun load_domain_types/1],
+  lists:foldl(fun
+                (Step, {ok, State1}) ->
+                  Step(State1);
+                (_, {error, Reason}) ->
+                  {error, Reason}
+              end, {ok, State}, Steps).
+
 -spec load_enum_types(state()) -> {ok, state()} | {error, term()}.
 load_enum_types(State = #{types := Types}) ->
   Query = ["SELECT typname, oid, typarray",
@@ -317,6 +329,37 @@ load_enum_types(State = #{types := Types}) ->
     {ok, _, Rows, _} ->
       EnumTypes = lists:foldl(F, [], Rows),
       {ok, State#{types => EnumTypes ++ Types}};
+    {error, Error} ->
+      {error, Error}
+  end.
+
+-spec load_domain_types(state()) -> {ok, state()} | {error, term()}.
+load_domain_types(State = #{types := Types}) ->
+  Query = ["SELECT typname, oid, typarray, typbasetype",
+           "  FROM pg_type",
+           "  WHERE typtype = 'd'"],
+  F = fun ([NameString, Oid, ArrayOid, BaseOid], Acc) ->
+          Name = binary_to_atom(NameString),
+          TypeName = {domain, Name},
+          case pgc_types:find_type_by_oid(BaseOid, Types) of
+            {_, _, Codec} ->
+              DomainType = {TypeName, Oid, Codec},
+              ArrayType = {{array, TypeName}, ArrayOid,
+                           {pgc_codec_array, [TypeName]}},
+              [DomainType | [ArrayType | Acc]];
+            unknown_type ->
+              throw({error, {unknown_domain_base_type, Oid}})
+          end
+      end,
+  case send_extended_query(Query, [], #{}, State) of
+    {ok, _, Rows, _} ->
+      try
+        DomainTypes = lists:foldl(F, [], Rows),
+        {ok, State#{types => DomainTypes ++ Types}}
+      catch
+        throw:{error, Reason} ->
+          {error, Reason}
+      end;
     {error, Error} ->
       {error, Error}
   end.

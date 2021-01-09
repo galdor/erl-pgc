@@ -513,7 +513,7 @@ enum_test_() ->
        C
    end,
    fun (C) ->
-       {ok, _} = pgc:exec(C, "DROP TYPE E1"),
+       {ok, _} = pgc:exec(C, "DROP TYPE IF EXISTS E1"),
        pgc_tests:stop_client(C)
    end,
    fun (C) ->
@@ -527,12 +527,46 @@ enum_test_() ->
                       query_row(C, "SELECT $1", [{{enum, e1}, foo}])),
         ?_assertEqual([foo],
                       query_row(C, "SELECT $1", [{{enum, e1}, <<"foo">>}])),
-        ?_assertEqual([[foo, bar, foo]],
-                      query_row(C, "SELECT $1",
-                                [{{array, {enum, e1}}, [foo, bar, foo]}])),
         ?_assertEqual([[foo, bar]],
-                      query_row(C, "SELECT $1::E1[]",
-                                [{{array, text}, [<<"foo">>, <<"bar">>]}]))]
+                      query_row(C, "SELECT ARRAY['foo', 'bar']::E1[]", [])),
+        ?_assertEqual([[foo, bar, foo]],
+                       query_row(C, "SELECT $1",
+                                 [{{array, {enum, e1}}, [foo, bar, foo]}])),
+       ?_assertEqual([[foo, bar]],
+                     query_row(C, "SELECT $1::E1[]",
+                               [{{array, text}, [<<"foo">>, <<"bar">>]}]))]
+   end}.
+
+domain_test_() ->
+  {setup,
+   fun () ->
+       C = pgc_tests:start_client(),
+       {ok, _} = pgc:exec(C, "DROP DOMAIN IF EXISTS D1"),
+       {ok, _} = pgc:exec(C, "CREATE DOMAIN D1 AS INTEGER"),
+       ok = pgc_client:reload_types(C),
+       C
+   end,
+   fun (C) ->
+       {ok, _} = pgc:exec(C, "DROP DOMAIN IF EXISTS D1"),
+       pgc_tests:stop_client(C)
+   end,
+   fun (C) ->
+       [?_assertEqual([42],
+                      query_row(C, "SELECT 42::D1")),
+        ?_assertEqual([42],
+                      query_row(C, "SELECT $1::D1", [42])),
+        ?_assertEqual([42],
+                      query_row(C, "SELECT $1::D1", [{int4, 42}])),
+        ?_assertEqual([42],
+                      query_row(C, "SELECT $1", [{{domain, d1}, 42}])),
+        ?_assertEqual([[1, 2, 3]],
+                      query_row(C, "SELECT ARRAY[1, 2, 3]::D1[]", [])),
+        ?_assertEqual([[1, 2, 3]],
+                      query_row(C, "SELECT $1",
+                                [{{array, {domain, d1}}, [1, 2, 3]}])),
+        ?_assertEqual([[1, 2, 3]],
+                      query_row(C, "SELECT $1::D1[]",
+                                [{{array, int4}, [1, 2, 3]}]))]
    end}.
 
 -spec query_row(pgc_client:ref(), unicode:chardata()) -> [term()].

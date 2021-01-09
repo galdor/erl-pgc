@@ -24,7 +24,10 @@
 -type type() :: {type_name(), pgc:oid(), codec()}.
 -type type_set() :: [type()].
 
--type type_name() :: atom() | {array, atom()} | {enum, atom()}.
+-type type_name() :: atom()
+                   | {array, atom()}
+                   | {enum, atom()}
+                   | {domain, atom()}.
 
 -type codec() :: {module(), list()}.
 

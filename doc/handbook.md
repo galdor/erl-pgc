@@ -130,6 +130,14 @@ Clients automatically discover PostgreSQL enum types during initialization. If
 a client execute queries which create new enum types, it should take care to
 call `pgc_client:refresh_types/1` to reload the type table.
 
+## Domains
+Values whose types is a domain are reprented the same way as values with the
+base type of the domain. The type name is `{domain, Name}` when `Name` is an
+atom whose value is the name of the domain in PostgreSQL. As for enum names,
+domain names are lower-case.
+
+Domains are automatically discovered the same way as enums are.
+
 ## Floating point values
 Erlang does not support `NaN`, `+Infinity` and `-Infinity`. Therefore we
 introduce `pgc:float_value()` which extends `float()` with `nan`,
