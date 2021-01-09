@@ -98,8 +98,8 @@ with_transaction(PoolRef, Fun) ->
         term() | {error, term()}.
 with_transaction(PoolRef, Fun, BeginOpts) ->
   SendQuery = fun (Client, Query, ErrType) ->
-                  case pgc:query(Client, Query) of
-                    {ok, _, _, _} ->
+                  case pgc:simple_exec(Client, Query) of
+                    {ok, _} ->
                       ok;
                     {error, Reason} ->
                       %% BEGIN/COMMIT/ROLLBACK failing is a big deal.
