@@ -241,7 +241,8 @@ handle_cast(Msg, State) ->
   ?LOG_WARNING("unhandled cast ~p~n", [Msg]),
   {noreply, State}.
 
-handle_info({request_timeout, Request = {From, _}}, State) ->
+handle_info({request_timeout, Request = {From, _}},
+            State = #{requests := Requests}) ->
   %% It is possible in some rare cases to receive a timeout for a request
   %% which has already been satisfied with the following sequence of events:
   %%
@@ -254,11 +255,12 @@ handle_info({request_timeout, Request = {From, _}}, State) ->
   %% To prevent that, the request_timeout message contains the request. If it
   %% does not match the oldest request in the queue, then it has already been
   %% removed.
-  case pop_request(Request, State) of
-    {ok, State2} ->
+  case queue:peek(Requests) of
+    {value, Request} ->
+      {request, _, State2} = pop_oldest_request(State),
       gen_server:reply(From, {error, timeout}),
       {noreply, State2};
-    request_mismatch ->
+    _ ->
       ?LOG_INFO("ignoring obsolete request_timeout message for request ~p~n",
                 [Request]),
       {noreply, State}
@@ -295,17 +297,6 @@ insert_request(Request, State) ->
       State2#{request_timer => Timer};
     false ->
       State2
-  end.
-
--spec pop_request(request(), state()) -> {ok, state()} | request_mismatch.
-pop_request(Request, State) ->
-  #{requests := Requests} = State,
-  case queue:peek(Requests) of
-    {value, Request} ->
-      {request, _, State2} = pop_oldest_request(State),
-      {ok, State2};
-    _ ->
-      request_mismatch
   end.
 
 -spec pop_oldest_request(state()) -> {request, request(), state()} | no_request.
