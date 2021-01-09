@@ -35,6 +35,8 @@ pool_test_() ->
    [fun start_stop/0,
     fun stop/0,
     fun client_init_error/0,
+    fun stop_clients_free/0,
+    fun stop_clients_busy/0,
     fun with_client/0,
     fun with_client_close/0,
     fun with_transaction/0,
@@ -65,6 +67,40 @@ client_init_error() ->
   Pool = test_pool(#{client_options => #{database => "does_not_exist"}}),
   ?assertMatch({error, {client_error, #{code := invalid_catalog_name}}},
                pgc_pool:acquire(Pool)),
+  pgc_pool:stop(Pool).
+
+stop_clients_free() ->
+  Pool = test_pool(#{}),
+  {ok, Client1} = pgc_pool:acquire(Pool),
+  pgc_pool:release(Pool, Client1),
+  ?assertMatch(#{nb_clients := 1,
+                 nb_free_clients := 1,
+                 nb_busy_clients := 0},
+               pgc_pool:stats(Pool)),
+  pgc_pool:stop_clients(Pool),
+  ?assertMatch(#{nb_clients := 0,
+                 nb_free_clients := 0,
+                 nb_busy_clients := 0},
+               pgc_pool:stats(Pool)),
+  pgc_pool:stop(Pool).
+
+stop_clients_busy() ->
+  Pool = test_pool(#{max_nb_clients => 10}),
+  {ok, Client1} = pgc_pool:acquire(Pool),
+  ?assertMatch(#{nb_clients := 1,
+                 nb_free_clients := 0,
+                 nb_busy_clients := 1},
+               pgc_pool:stats(Pool)),
+  pgc_pool:stop_clients(Pool),
+  ?assertMatch(#{nb_clients := 0,
+                 nb_free_clients := 0,
+                 nb_busy_clients := 0},
+               pgc_pool:stats(Pool)),
+  pgc_pool:release(Pool, Client1),
+  ?assertMatch(#{nb_clients := 0,
+                 nb_free_clients := 0,
+                 nb_busy_clients := 0},
+               pgc_pool:stats(Pool)),
   pgc_pool:stop(Pool).
 
 with_client() ->

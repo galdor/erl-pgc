@@ -14,7 +14,7 @@
 
 -module(pgc).
 
--export([start_pool/2,
+-export([start_pool/2, stop_pool_clients/1,
          pool_stats/1,
          acquire/1, release/2,
          with_client/2, with_transaction/2,
@@ -99,6 +99,10 @@
         supervisor:startchild_ret().
 start_pool(Id, Options) ->
   pgc_pool_sup:start_pool(Id, Options).
+
+-spec stop_pool_clients(pgc:pool_id()) -> ok.
+stop_pool_clients(Id) ->
+  pgc_pool:stop_clients(pgc_pool:process_name(Id)).
 
 -spec pool_stats(pool_id()) -> pgc_pool:stats().
 pool_stats(PoolId) ->

@@ -19,7 +19,7 @@
 -behaviour(gen_server).
 
 -export([process_name/1, start_link/2, stop/1,
-         stats/1, acquire/1, release/2,
+         stop_clients/1, stats/1, acquire/1, release/2,
          with_client/2, with_transaction/2, with_transaction/3]).
 -export([init/1, terminate/2, handle_call/3, handle_cast/2, handle_info/2]).
 
@@ -64,6 +64,10 @@ start_link(Id, Options) ->
 -spec stop(ref()) -> ok.
 stop(PoolRef) ->
   gen_server:stop(PoolRef).
+
+-spec stop_clients(ref()) -> ok.
+stop_clients(PoolRef) ->
+  gen_server:call(PoolRef, stop_clients, infinity).
 
 -spec stats(ref()) -> stats().
 stats(PoolRef) ->
@@ -149,15 +153,13 @@ init([Id, Options]) ->
             requests => queue:new()},
   {ok, State}.
 
-terminate(_Reason, #{free_clients := FreeClients,
-                     busy_clients := BusyClients,
-                     requests := Requests}) ->
-  lists:foreach(fun pgc_client:stop/1, FreeClients),
-  lists:foreach(fun pgc_client:stop/1, BusyClients),
-  lists:foreach(fun ({From, _}) ->
-                    gen_server:reply(From, {error, stopping})
-                end, queue:to_list(Requests)),
+terminate(_Reason, State) ->
+  do_stop_clients(State),
   ok.
+
+handle_call(stop_clients, _From, State) ->
+  State2 = do_stop_clients(State),
+  {reply, ok, State2};
 
 handle_call(stats, _From, State) ->
   #{options := Options,
@@ -207,30 +209,41 @@ handle_call(acquire, From,
 handle_call({release, Client}, _From,
             State = #{free_clients := FreeClients,
                       busy_clients := BusyClients}) ->
-  Pred = fun (C) -> C =:= Client end,
-  {[_], BusyClients2} = lists:partition(Pred, BusyClients),
-  %% The process of the client may have exited after being acquired but
-  %% before being released.
-  case is_process_alive(Client) of
-    true ->
-      %% If there is a request in the request queue, we can satisfy it
-      %% immediately.
-      case pop_oldest_request(State) of
-        {request, {ReqFrom, _}, State2} ->
-          %% The client stays busy, so we update neither the free list nor
-          %% the busy list.
-          gen_server:reply(ReqFrom, {ok, Client}),
-          {reply, ok, State2};
-        no_request ->
-          State2 = State#{free_clients => [Client | FreeClients],
-                          busy_clients => BusyClients2},
+  %% If stop_clients/1 was called after a connection has been acquired, we may
+  %% end up with a release message for a client which is not in the busy list.
+  %% We just ignore it.
+  %%
+  %% Note that as a consequence, a invalid release call containing an unknown
+  %% client (or a free one) will go undetected. If this becomes a real
+  %% problem, we could keep a set of closed connection pids and check them
+  %% during release.
+  case lists:partition(fun (C) -> C =:= Client end, BusyClients) of
+    {[_], BusyClients2} ->
+      %% The process of the client may have exited after being acquired but
+      %% before being released.
+      case is_process_alive(Client) of
+        true ->
+          %% If there is a request in the request queue, we can satisfy it
+          %% immediately.
+          case pop_oldest_request(State) of
+            {request, {ReqFrom, _}, State2} ->
+              %% The client stays busy, so we update neither the free list nor
+              %% the busy list.
+              gen_server:reply(ReqFrom, {ok, Client}),
+              {reply, ok, State2};
+            no_request ->
+              State2 = State#{free_clients => [Client | FreeClients],
+                              busy_clients => BusyClients2},
+              {reply, ok, State2}
+          end;
+        false ->
+          %% If the client exited before being released, it does not go back
+          %% to the free list.
+          State2 = State#{busy_clients => BusyClients2},
           {reply, ok, State2}
       end;
-    false ->
-      %% If the client exited before being released, it does not go back
-      %% to the free list.
-      State2 = State#{busy_clients => BusyClients2},
-      {reply, ok, State2}
+    {[], _} ->
+      {reply, ok, State}
   end;
 
 handle_call(Msg, From, State) ->
@@ -274,13 +287,28 @@ handle_info({'EXIT', Client, _Reason},
       %% The client is free, just remove it
       {noreply, State#{free_clients => FreeClients2}};
     {[], _} ->
-      %% The client is busy, it will be removed when released
+      %% Either the client is busy (in that case it will be removed when
+      %% released) or it was stopped (and then the only thing that maters is
+      %% not keeping its pid in any of the client lists).
       {noreply, State}
   end;
 
 handle_info(Msg, State) ->
   ?LOG_WARNING("unhandled info ~p~n", [Msg]),
   {noreply, State}.
+
+-spec do_stop_clients(state()) -> state().
+do_stop_clients(State = #{free_clients := FreeClients,
+                          busy_clients := BusyClients,
+                          requests := Requests}) ->
+  lists:foreach(fun pgc_client:stop/1, FreeClients),
+  lists:foreach(fun pgc_client:stop/1, BusyClients),
+  lists:foreach(fun ({From, _}) ->
+                    gen_server:reply(From, {error, stopping})
+                end, queue:to_list(Requests)),
+  State#{free_clients => [],
+         busy_clients => [],
+         requests => queue:new()}.
 
 -spec insert_request(request(), state()) -> state().
 insert_request(Request, State) ->

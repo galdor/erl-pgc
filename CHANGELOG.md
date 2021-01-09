@@ -10,6 +10,9 @@
 - Add default values to models.
 - Add support for enum values.
 - Add support for domain values.
+- Add `pgc:stop_pool_clients/1` to stop all clients in a pool. It is
+  particularly useful when an application creates new database types and wants
+  to ensure all connection are re-created so that type sets get reloaded.
 # Bugs
 - Fix handling of unknown `gen_server` calls.
 - Delete the model registry ETS table during shutdown.
