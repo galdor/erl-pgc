@@ -26,6 +26,6 @@ encode(Value, _, _, [_EnumName]) when is_binary(Value) ->
   Value.
 
 -spec decode(binary(), pgc_types:type(), pgc_types:type_set(), list()) ->
-        unicode:chardata().
+        atom().
 decode(Bin, _, _, [_EnumName]) ->
   binary_to_atom(Bin).
