@@ -231,13 +231,15 @@ column_update_csv(ModelRef, Correlation, Keys, MinPlaceholder) ->
         unicode:chardata().
 column_update(ModelRef, Key, Placeholder) ->
   Model = model(ModelRef),
-  [column(Model, Key), <<"=$">>, Placeholder].
+  [column(Model, Key), <<"=$">>,
+   (integer_to_binary(Placeholder))/binary].
 
 -spec column_update(model_ref(), string(), model_key(), pos_integer()) ->
         unicode:chardata().
 column_update(ModelRef, Correlation, Key, Placeholder) ->
   Model = model(ModelRef),
-  [column(Model, Correlation, Key), $=, $$, Placeholder].
+  [column(Model, Correlation, Key), <<"=$">>,
+   (integer_to_binary(Placeholder))/binary].
 
 -spec columns(model_ref()) -> [unicode:chardata()].
 columns(ModelRef) ->
