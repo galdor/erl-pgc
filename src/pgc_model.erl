@@ -21,11 +21,13 @@
          decode_rows/2, decode_rows/3,
          column_tuple/1, column_tuple/2, column_tuple/3,
          column_csv/1, column_csv/2, column_csv/3,
+         column_update_csv/2, column_update_csv/3, column_update_csv/4,
+         column_update/3, column_update/4,
+         columns/1, columns/2, columns/3,
+         column/2, column/3,
          placeholder_tuple/1, placeholder_tuple/2,
          placeholder_csv/1, placeholder_csv/2,
-         placeholder_list/2,
-         columns/1, columns/2, columns/3,
-         column/2, column/3]).
+         placeholder_list/2]).
 
 -export_type([model_ref/0, model_name/0, model_table_name/0,
               model/0, model_key/0, model_keys/0, model_value/0,
@@ -198,6 +200,44 @@ column_csv(ModelRef, Correlation, Keys) ->
   Names = lists:map(fun (Key) -> column(Model, Correlation, Key) end,
                     model_keys(Model, Keys)),
   lists:join($,, Names).
+
+-spec column_update_csv(model_ref(), pos_integer()) ->
+        unicode:chardata().
+column_update_csv(ModelRef, MinPlaceholder) ->
+  column_update_csv(model(ModelRef), all, MinPlaceholder).
+
+-spec column_update_csv(model_ref(), model_keys(), pos_integer()) ->
+        unicode:chardata().
+column_update_csv(ModelRef, Keys0, MinPlaceholder) ->
+  Model = model(ModelRef),
+  Keys = model_keys(Model, Keys0),
+  Placeholders = lists:seq(MinPlaceholder, MinPlaceholder + length(Keys) - 1),
+  Updates = lists:map(fun ({Key, Placeholder}) ->
+                          column_update(Model, Key, Placeholder)
+                      end, lists:zip(Keys, Placeholders)),
+  lists:join($,, Updates).
+
+-spec column_update_csv(model_ref(), string(), model_keys(), pos_integer()) ->
+        unicode:chardata().
+column_update_csv(ModelRef, Correlation, Keys, MinPlaceholder) ->
+  Model = model(ModelRef),
+  Placeholders = lists:seq(MinPlaceholder, MinPlaceholder + length(Keys) - 1),
+  Updates = lists:map(fun ({Key, Placeholder}) ->
+                          column_update(Model, Correlation, Key, Placeholder)
+                      end, lists:zip(Keys, Placeholders)),
+  lists:join($,, Updates).
+
+-spec column_update(model_ref(), model_key(), pos_integer()) ->
+        unicode:chardata().
+column_update(ModelRef, Key, Placeholder) ->
+  Model = model(ModelRef),
+  [column(Model, Key), <<"=$">>, Placeholder].
+
+-spec column_update(model_ref(), string(), model_key(), pos_integer()) ->
+        unicode:chardata().
+column_update(ModelRef, Correlation, Key, Placeholder) ->
+  Model = model(ModelRef),
+  [column(Model, Correlation, Key), $=, $$, Placeholder].
 
 -spec columns(model_ref()) -> [unicode:chardata()].
 columns(ModelRef) ->
