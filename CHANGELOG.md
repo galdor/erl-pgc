@@ -18,6 +18,7 @@
 - Delete the model registry ETS table during shutdown.
 ## Misc
 - Do not pass null values to custom encoding and decoding functions in models.
+- Make the client less verbose.
 
 # 1.4.1
 ## Bugs

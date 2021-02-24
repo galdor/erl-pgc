@@ -143,7 +143,7 @@ init([Options]) ->
 terminate(Reason, State = #{socket := Socket}) ->
   send(pgc_proto:encode_terminate_msg(), State),
   gen_tcp:close(Socket),
-  ?LOG_INFO("connection closed"),
+  ?LOG_DEBUG("connection closed"),
   terminate(Reason, maps:remove(socket, State));
 terminate(_Reason, _State) ->
   ok.
@@ -186,11 +186,11 @@ connect(State = #{options := Options}) ->
   Host = unicode:characters_to_list(Host0),
   Port = maps:get(port, Options, 5432),
   TCPOptions = maps:get(tcp_options, Options, []),
-  ?LOG_INFO("connecting to ~s:~b", [Host, Port]),
+  ?LOG_DEBUG("connecting to ~s:~b", [Host, Port]),
   TCPOptions2 = [{active, false}, {mode, binary}] ++ TCPOptions,
   case gen_tcp:connect(Host, Port, TCPOptions2) of
     {ok, Socket} ->
-      ?LOG_INFO("connection established"),
+      ?LOG_DEBUG("connection established"),
       State2 = State#{socket => Socket},
       {ok, State2};
     {error, Reason} ->
@@ -213,10 +213,10 @@ tls_connect(State = #{options := Options, socket := Socket}) ->
   send(pgc_proto:encode_ssl_request_msg(), State),
   case gen_tcp:recv(Socket, 1) of
     {ok, <<"S">>} ->
-      ?LOG_INFO("initializing tls connection"),
+      ?LOG_DEBUG("initializing tls connection"),
       case ssl:connect(Socket, TLSOptions) of
         {ok, SSLSocket} ->
-          ?LOG_INFO("tls connection established"),
+          ?LOG_DEBUG("tls connection established"),
           {ok, State#{ssl_socket => SSLSocket}};
         {error, Reason} ->
           ?LOG_ERROR("tls connection failed: ~p", [Reason]),
