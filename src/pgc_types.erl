@@ -215,11 +215,13 @@ oid_to_type(1563) -> {{array, varbit}, {pgc_codec_array, [varbit]}};
 oid_to_type(2278) -> {void, {pgc_codec_void, []}};
 oid_to_type(2950) -> {uuid, {pgc_codec_uuid, []}};
 oid_to_type(2951) -> {{array, uuid}, {pgc_codec_array, [uuid]}};
+oid_to_type(3734) -> {regconfig, {pgc_codec_oid, []}};
+oid_to_type(3735) -> {{array, regconfig}, {pgc_codec_oid, []}};
 oid_to_type(3802) -> {jsonb, {pgc_codec_jsonb, []}};
 oid_to_type(3807) -> {{array, jsonb}, {pgc_codec_array, [jsonb]}};
 oid_to_type(_) -> unknown_oid.
 
--spec name_to_oid(pgc_types:type_name()) -> pgc:oid() | unknown_name.
+-spec name_to_oid(type_name()) -> pgc:oid() | unknown_name.
 name_to_oid(bit) -> 1560;
 name_to_oid(boolean) -> 16;
 name_to_oid(box) -> 603;
@@ -247,6 +249,7 @@ name_to_oid(oid) -> 26;
 name_to_oid(path) -> 602;
 name_to_oid(point) -> 600;
 name_to_oid(polygon) -> 604;
+name_to_oid(regconfig) -> 3734;
 name_to_oid(text) -> 25;
 name_to_oid(time) -> 1083;
 name_to_oid(timestamp) -> 1114;
@@ -284,6 +287,7 @@ name_to_oid({array, oid}) -> 1028;
 name_to_oid({array, path}) -> 1019;
 name_to_oid({array, point}) -> 1017;
 name_to_oid({array, polygon}) -> 1027;
+name_to_oid({array, regconfig}) -> 3735;
 name_to_oid({array, text}) -> 1009;
 name_to_oid({array, timestamptz}) -> 1185;
 name_to_oid({array, timestamp}) -> 1115;
