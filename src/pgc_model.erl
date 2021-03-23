@@ -25,8 +25,8 @@
          column_update/3, column_update/4,
          columns/1, columns/2, columns/3,
          column/2, column/3,
-         placeholder_tuple/1, placeholder_tuple/2,
-         placeholder_csv/1, placeholder_csv/2,
+         placeholder_tuple/1, placeholder_tuple/2, placeholder_tuple/3,
+         placeholder_csv/1, placeholder_csv/2, placeholder_csv/3,
          placeholder_list/2]).
 
 -export_type([model_ref/0, model_name/0, model_table_name/0,
@@ -284,8 +284,13 @@ placeholder_tuple(ModelRef) ->
 
 -spec placeholder_tuple(model_ref(), model_keys()) -> unicode:chardata().
 placeholder_tuple(ModelRef, Keys) ->
+  placeholder_tuple(ModelRef, Keys, 0).
+
+-spec placeholder_tuple(model_ref(), model_keys(), non_neg_integer()) ->
+        unicode:chardata().
+placeholder_tuple(ModelRef, Keys, NbExtras) ->
   Model = model(ModelRef),
-  [$(, placeholder_csv(Model, Keys), $)].
+  [$(, placeholder_csv(Model, Keys, NbExtras), $)].
 
 -spec placeholder_csv(model_ref()) -> unicode:chardata().
 placeholder_csv(ModelRef) ->
@@ -293,7 +298,13 @@ placeholder_csv(ModelRef) ->
 
 -spec placeholder_csv(model_ref(), model_keys()) -> unicode:chardata().
 placeholder_csv(Model, Keys) ->
-  lists:join($,, placeholder_list(1, length(model_keys(Model, Keys)))).
+  placeholder_csv(Model, Keys, 0).
+
+-spec placeholder_csv(model_ref(), model_keys(), non_neg_integer()) ->
+        unicode:chardata().
+placeholder_csv(Model, Keys, NbExtras) ->
+  N = length(model_keys(Model, Keys)) + NbExtras,
+  lists:join($,, placeholder_list(1, N)).
 
 -spec placeholder_list(Min :: pos_integer(), Max :: pos_integer()) ->
         [binary()].
