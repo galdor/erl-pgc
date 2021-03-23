@@ -14,7 +14,7 @@
 
 -module(pgc_model).
 
--export([model/1,
+-export([model/1, model_keys/1,
          encode/2, encode/3,
          decode/2, decode/3,
          decode_row/2, decode_row/3,
@@ -64,10 +64,14 @@ model(Ref) when is_atom(Ref) ->
 model(Model) ->
   Model.
 
--spec model_keys(model(), model_keys()) -> [model_key()].
-model_keys(Model, all) ->
-  maps:keys(Model);
-model_keys(_Model, Keys) ->
+-spec model_keys(model_ref()) -> [model_key()].
+model_keys(Ref) ->
+  model_keys(model(Ref), all).
+
+-spec model_keys(model_ref(), model_keys()) -> [model_key()].
+model_keys(Ref, all) ->
+  maps:keys(model(Ref));
+model_keys(_Ref, Keys) ->
   Keys.
 
 -spec encode(entity(), model_ref()) -> [encoded_value()].
