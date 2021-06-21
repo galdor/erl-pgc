@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+
+# 1.4.2
 ## Features
 - Add `pgc_model:decode_rows/2` and `pgc_model:decode_rows/3`.
 - Add `pgc_model:decode_row/2` and `pgc_model:decode_row/2` to keep names coherent.
