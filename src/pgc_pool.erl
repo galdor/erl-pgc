@@ -117,20 +117,22 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
   Fun2 = fun (Client) ->
              SendQuery(Client, [<<"BEGIN ">>, BeginOpts], begin_failure),
              try
-               Res = Fun(Client),
-               SendQuery(Client, <<"COMMIT">>, commit_failure),
-               Res
-             of
-               {error, Reason} ->
-                 SendQuery(Client, <<"ROLLBACK">>, rollback_failure),
-                 {error, Reason};
-               Result ->
-                 Result
+               case Fun(Client) of
+                 ok ->
+                   SendQuery(Client, <<"COMMIT">>, commit_failure),
+                   ok;
+                 {ok, Result} ->
+                   SendQuery(Client, <<"COMMIT">>, commit_failure),
+                   {ok, Result};
+                 {error, Reason} ->
+                   SendQuery(Client, <<"ROLLBACK">>, rollback_failure),
+                   {error, Reason}
+               end
              catch
-               throw:{error, {Type, Reason}} when
+               throw:{error, {Type, ThrowReason}} when
                    Type =:= commit_failure; Type =:= rollback_failure ->
-                 {error, {Type, Reason}};
-               Type:Reason:Stack ->
+                 {error, {Type, ThrowReason}};
+               Type:ThrowReason:Stack ->
                  %% If something goes wrong here, we do not want to hide the
                  %% original error.
                  try
@@ -138,7 +140,7 @@ with_transaction(PoolRef, Fun, BeginOpts) ->
                  catch
                    _:_ -> ok
                  end,
-                 erlang:raise(Type, Reason, Stack)
+                 erlang:raise(Type, ThrowReason, Stack)
              end
          end,
   with_client(PoolRef, Fun2).

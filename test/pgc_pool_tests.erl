@@ -41,6 +41,7 @@ pool_test_() ->
     fun with_client_close/0,
     fun with_transaction/0,
     fun with_transaction_rollback/0,
+    fun with_transaction_function_failure/0,
     fun with_transaction_commit_failure/0,
     fun timeout/0,
     fun stats/0,
@@ -135,8 +136,11 @@ with_client_close() ->
 
 with_transaction() ->
   Pool = test_pool(#{}),
-  Fun1 = fun (Client) -> pgc:query(Client, "SELECT 42") end,
-  ?assertMatch({ok, [_], [[_]], 1}, pgc_pool:with_transaction(Pool, Fun1)),
+  Fun1 = fun (Client) ->
+             {ok, [_], [[I]], 1} = pgc:query(Client, "SELECT 42"),
+             {ok, I}
+         end,
+  ?assertMatch({ok, 42}, pgc_pool:with_transaction(Pool, Fun1)),
   Fun2 = fun (Client) -> pgc:query(Client, "FOO") end,
   ?assertMatch({error, _}, pgc_pool:with_transaction(Pool, Fun2)),
   Fun3 = fun (_Client) -> throw(test) end,
@@ -149,7 +153,8 @@ with_transaction() ->
 
 with_transaction_rollback() ->
   Pool = test_pool(#{}),
-  Table = atom_to_binary(?FUNCTION_NAME),
+  Table = iolist_to_binary(io_lib:format("test_~b",
+                                         [os:system_time(second)])),
   Fun1 = fun (Client) ->
              {ok, _} = pgc:exec(Client, ["CREATE TABLE ", Table, "()"]),
              error(test)
@@ -160,6 +165,25 @@ with_transaction_rollback() ->
          end,
   ?assertMatch({error, #{code := undefined_table}},
                pgc_pool:with_client(Pool, Fun2)),
+  pgc_pool:stop(Pool).
+
+with_transaction_function_failure() ->
+  Pool = test_pool(#{}),
+  Table = iolist_to_binary(io_lib:format("test_~b",
+                                         [os:system_time(second)])),
+  Fun1 = fun (Client) ->
+             {ok, _} = pgc:exec(Client, ["CREATE TABLE ", Table, "()"]),
+             {error, test}
+         end,
+  ?assertEqual({error, test},
+               pgc_pool:with_transaction(Pool, Fun1)),
+  %% The previous table creation must have been rolled back, and therefore
+  %% re-creating should work.
+  Fun2 = fun (Client) ->
+             {ok, _} = pgc:exec(Client, ["CREATE TABLE ", Table, "()"]),
+             ok
+         end,
+  ?assertEqual(ok, pgc_pool:with_transaction(Pool, Fun2)),
   pgc_pool:stop(Pool).
 
 with_transaction_commit_failure() ->

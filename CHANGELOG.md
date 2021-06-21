@@ -15,6 +15,7 @@
   to ensure all connection are re-created so that type sets get reloaded.
 - Add support for the `REGCONFIG` type.
 # Bugs
+- Fix rollback when a transaction function returns an error tuple.
 - Fix handling of unknown `gen_server` calls.
 - Delete the model registry ETS table during shutdown.
 ## Misc
