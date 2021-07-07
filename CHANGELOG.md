@@ -1,6 +1,8 @@
 % erl-pgc changelog
 
 # Next Version
+# Bugs
+- Fix dialyzer type specification for `error_and_not_field/0`.
 
 # 1.4.2
 ## Features
