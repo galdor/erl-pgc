@@ -52,7 +52,7 @@
 
 -type error_and_notice_fields() :: #{l10n_severity := severity(),
                                      severity := severity(),
-                                     code := binary(),
+                                     code := pgc_error_codes:error_code(),
                                      message := binary(),
                                      detail => binary(),
                                      position => pos_integer(),
