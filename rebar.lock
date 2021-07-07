@@ -1,4 +1,4 @@
 [{<<"et">>,
   {git,"https://github.com/galdor/erl-et.git",
-       {ref,"38ccbe694fe39eb7c284f6e850eca0d625b7e41a"}},
+       {ref,"7b55d59e3ef75bbd6ea4126d3855046e639709a6"}},
   0}].
