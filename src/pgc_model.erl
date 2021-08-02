@@ -25,6 +25,7 @@
          column_update/3, column_update/4,
          columns/1, columns/2, columns/3,
          column/2, column/3,
+         column_fun/1, column_fun/2,
          placeholder_tuple/1, placeholder_tuple/2, placeholder_tuple/3,
          placeholder_csv/1, placeholder_csv/2, placeholder_csv/3,
          placeholder_list/2]).
@@ -280,6 +281,20 @@ column(ModelRef, Correlation, Key) ->
       quote_identifier(Name0);
     _ ->
       [quote_identifier(Correlation), $., quote_identifier(Name0)]
+  end.
+
+-spec column_fun(model_ref()) ->
+        fun((model_key()) -> unicode:chardata()).
+column_fun(ModelRef) ->
+  fun (Key) ->
+      column(ModelRef, Key)
+  end.
+
+-spec column_fun(model_ref(), string()) ->
+        fun((model_key()) -> unicode:chardata()).
+column_fun(ModelRef, Correlation) ->
+  fun (Key) ->
+      column(ModelRef, Correlation, Key)
   end.
 
 -spec placeholder_tuple(model_ref()) -> unicode:chardata().

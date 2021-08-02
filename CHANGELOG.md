@@ -1,8 +1,10 @@
 % erl-pgc changelog
 
 # Next Version
+## Features
+- Add `pgc_model:column_fun/1` and `pgc_model:column_fun/2`.
 # Bugs
-- Fix dialyzer type specification for `error_and_not_field/0`.
+- Fix dialyzer type specification for `error_and_notice_fields/0`.
 
 # 1.4.2
 ## Features
