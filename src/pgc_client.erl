@@ -141,8 +141,13 @@ init([Options]) ->
   end.
 
 terminate(Reason, State = #{socket := Socket}) ->
-  send(pgc_proto:encode_terminate_msg(), State),
-  gen_tcp:close(Socket),
+  try
+    send(pgc_proto:encode_terminate_msg(), State),
+    gen_tcp:close(Socket)
+  catch
+    error:_ ->
+      ok
+  end,
   ?LOG_DEBUG("connection closed"),
   terminate(Reason, maps:remove(socket, State));
 terminate(_Reason, _State) ->
@@ -477,20 +482,36 @@ recv_extended_query_response(State = #{options := Options}, Response) ->
   end.
 
 -spec send(iodata(), state()) -> ok.
-send(Data, #{ssl_socket := Socket}) ->
-  ok = ssl:send(Socket, Data),
-  ok;
-send(Data, #{socket := Socket}) ->
-  ok = gen_tcp:send(Socket, Data),
-  ok.
+send(Data, State) ->
+  Fun = case State of
+          #{ssl_socket := Socket} ->
+            fun ssl:send/2;
+          #{socket := Socket} ->
+            fun gen_tcp:send/2
+        end,
+  case Fun(Socket, Data) of
+    ok ->
+      ok;
+    {error, Reason} ->
+      ?LOG_ERROR("cannot send data: ~tp", [Reason]),
+      error({send, Reason})
+  end.
 
 -spec recv(integer(), state()) -> binary().
-recv(Length, #{ssl_socket := Socket}) ->
-  {ok, Data} = ssl:recv(Socket, Length),
-  Data;
-recv(Length, #{socket := Socket}) ->
-  {ok, Data} = gen_tcp:recv(Socket, Length),
-  Data.
+recv(Length, State) ->
+  Fun = case State of
+          #{ssl_socket := Socket} ->
+            fun ssl:recv/2;
+          #{socket := Socket} ->
+            fun gen_tcp:recv/2
+        end,
+  case Fun(Socket, Length) of
+    {ok, Data} ->
+      Data;
+    {error, Reason} ->
+      ?LOG_ERROR("cannot receive data: ~tp", [Reason]),
+      error({recv, Reason})
+  end.
 
 -spec recv_msg(state()) -> pgc_proto:msg().
 recv_msg(State = #{options := Options}) ->
