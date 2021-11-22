@@ -14,22 +14,19 @@
 
 -module(pgc_sup).
 
--behaviour(supervisor).
+-behaviour(c_sup).
 
 -export([start_link/0]).
--export([init/1]).
+-export([children/0]).
 
--spec start_link() -> supervisor:startlink_ret().
+-spec start_link() -> c_sup:start_ret().
 start_link() ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  c_sup:start_link({local, ?MODULE}, ?MODULE, #{}).
 
-init([]) ->
-  Children = [#{id => model_registry,
-                start => {pgc_model_registry, start_link, []}},
-              #{id => pools,
-                start => {pgc_pool_sup, start_link, []},
-                type => supervisor}],
-  Flags = #{strategy => one_for_one,
-            intensity => 1,
-            period => 5},
-  {ok, {Flags, Children}}.
+-spec children() -> c_sup:child_specs().
+children() ->
+  #{model_registry =>
+      #{start => fun pgc_model_registry:start_link/0},
+    pools =>
+      #{start => fun pgc_pool_sup:start_link/0,
+        stop => fun c_sup:stop/1}}.

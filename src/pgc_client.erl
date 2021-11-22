@@ -25,8 +25,8 @@
 
 -export_type([name/0, ref/0, options/0]).
 
--type name() :: et_gen_server:name().
--type ref() :: et_gen_server:ref().
+-type name() :: c_gen_server:name().
+-type ref() :: c_gen_server:ref().
 
 -type options() :: #{host => unicode:chardata(),
                      port => inet:port_number(),

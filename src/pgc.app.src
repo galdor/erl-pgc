@@ -24,7 +24,7 @@
    [kernel,
     stdlib,
     ssl,
-    et]},
+    core]},
   {env, []},
   {modules, []},
 

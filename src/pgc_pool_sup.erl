@@ -14,37 +14,26 @@
 
 -module(pgc_pool_sup).
 
--behaviour(supervisor).
+-behaviour(c_sup).
 
 -export([start_link/0, start_pool/2]).
--export([init/1]).
+-export([children/0]).
 
--spec start_link() -> supervisor:startlink_ret().
+-spec start_link() -> c_sup:start_ret().
 start_link() ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  c_sup:start_link({local, ?MODULE}, ?MODULE, #{}).
 
--spec start_pool(pgc:pool_id(), pgc_pool:options()) ->
-        supervisor:startchild_ret().
+-spec start_pool(pgc:pool_id(), pgc_pool:options()) -> c_sup:result(pid()).
 start_pool(Id, Options) ->
-  supervisor:start_child(?MODULE, pool_child_spec(Id, Options)).
+  Spec = #{start => fun pgc_pool:start_link/2,
+           start_args => [Id, Options]},
+  c_sup:start_child(?MODULE, Id, Spec).
 
-init([]) ->
-  Children = pool_child_specs(),
-  Flags = #{strategy => one_for_one,
-            intensity => 1,
-            period => 5},
-  {ok, {Flags, Children}}.
-
--spec pool_child_specs() -> [supervisor:child_spec()].
-pool_child_specs() ->
+-spec children() -> c_sup:child_specs().
+children() ->
   PoolSpecs = application:get_env(pgc, pools, #{}),
   maps:fold(fun (Id, Options, Acc) ->
-                [pool_child_spec(Id, Options) | Acc]
-            end,
-            [], PoolSpecs).
-
--spec pool_child_spec(pgc:pool_id(), pgc_pool:options()) ->
-        supervisor:child_spec().
-pool_child_spec(Id, Options) ->
-  #{id => Id,
-    start => {pgc_pool, start_link, [Id, Options]}}.
+                Spec = #{start => fun pgc_pool:start_link/2,
+                         start_args => [Id, Options]},
+                Acc#{Id => Spec}
+            end, #{}, PoolSpecs).

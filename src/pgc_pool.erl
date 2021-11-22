@@ -29,8 +29,8 @@
                      max_nb_clients => pos_integer(),
                      request_timeout => pos_integer()}.
 
--type name() :: et_gen_server:name().
--type ref() :: et_gen_server:ref().
+-type name() :: c_gen_server:name().
+-type ref() :: c_gen_server:ref().
 
 -type client_fun() :: fun((pgc_client:ref()) ->
                              ok | {ok, term()} | {error, term()}).

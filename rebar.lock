@@ -1,4 +1,4 @@
-[{<<"et">>,
-  {git,"https://github.com/galdor/erl-et.git",
-       {ref,"7b55d59e3ef75bbd6ea4126d3855046e639709a6"}},
+[{<<"core">>,
+  {git,"https://github.com/exograd/erl-core.git",
+       {ref,"a80693fa04ad8b8a20253848228a586c4647e811"}},
   0}].
