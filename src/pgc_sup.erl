@@ -25,8 +25,8 @@ start_link() ->
 
 -spec children() -> c_sup:child_specs().
 children() ->
-  #{model_registry =>
-      #{start => fun pgc_model_registry:start_link/0},
-    pools =>
-      #{start => fun pgc_pool_sup:start_link/0,
-        stop => fun c_sup:stop/1}}.
+  [{model_registry,
+    #{start => fun pgc_model_registry:start_link/0}},
+   {pools,
+    #{start => fun pgc_pool_sup:start_link/0,
+      stop => fun c_sup:stop/1}}].

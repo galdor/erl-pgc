@@ -35,5 +35,5 @@ children() ->
   maps:fold(fun (Id, Options, Acc) ->
                 Spec = #{start => fun pgc_pool:start_link/2,
                          start_args => [Id, Options]},
-                Acc#{Id => Spec}
-            end, #{}, PoolSpecs).
+                [{Id, Spec} | Acc]
+            end, [], PoolSpecs).

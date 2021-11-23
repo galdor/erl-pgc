@@ -1,4 +1,4 @@
 [{<<"core">>,
   {git,"https://github.com/exograd/erl-core.git",
-       {ref,"a80693fa04ad8b8a20253848228a586c4647e811"}},
+       {ref,"a6a97a1733bea110774e3250a6a61a65a5f16829"}},
   0}].
